@@ -1,0 +1,13 @@
+/vendor/
+/node_modules/
+/.env
+/.env.*
+!/.env.example
+/public/hot
+/public/storage
+/bootstrap/cache/*
+/storage/framework/*
+/storage/logs/*
+/storage/*.key
+/.phpunit.result.cache
+/.phpunit.cache/

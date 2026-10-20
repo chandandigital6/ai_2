@@ -1,0 +1,3 @@
+/* Small additions scoped to the Laravel Marketplace. Tailwind uses your existing Vite build. */
+.growya-marketplace-card{box-shadow:0 4px 18px rgba(15,23,42,.035)}
+.growya-marketplace-card:hover{transform:translateY(-2px)}

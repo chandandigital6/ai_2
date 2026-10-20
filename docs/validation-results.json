@@ -1,0 +1,42 @@
+{
+  "release": "2",
+  "as_of": "2026-10-20",
+  "tests": {
+    "tool": "pest",
+    "result": "passed",
+    "tests": 192,
+    "passed": 192,
+    "assertions": 540,
+    "duration_ms": 42326
+  },
+  "runtime_checks": {
+    "blade_compile": {
+      "exit_code": 0
+    },
+    "route_inventory": {
+      "exit_code": 0
+    },
+    "route_cache": {
+      "exit_code": 0
+    },
+    "php_syntax": {
+      "files": 1102,
+      "errors": []
+    }
+  },
+  "api_documentation": {
+    "routes_in_runtime": 397,
+    "unique_reference_routes": 397,
+    "postman_requests": 397,
+    "html_endpoint_cards": 397,
+    "new_native_route_templates": 59,
+    "all_routes_matched": true
+  },
+  "environment": "PHP 8.3.6; composer.lock dependencies; SQLite in-memory; external providers faked",
+  "limits": [
+    "No live MySQL concurrent-traffic test",
+    "No actual credentials, provider approval, handset delivery or payment/post/SMS execution",
+    "Dart transport sample not SDK-compiled",
+    "Web pages HTTP-rendered and Blade-compiled; no desktop/mobile browser screenshot acceptance"
+  ]
+}

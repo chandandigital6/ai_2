@@ -1,0 +1,6 @@
+<label class="grid gap-1 text-sm">Type<select name="label" required class="rounded border p-3 text-zinc-900">@foreach(['Home','Office','Other'] as $label)<option value="{{ $label }}" @selected(old('label',$item?->label??'Home')===$label)>{{ $label }}</option>@endforeach</select></label>
+@foreach(['recipient_name'=>'Recipient Name','phone'=>'Phone Number','address'=>'House / Street Address','city_name'=>'City Name','pincode'=>'PIN Code'] as $field=>$label)
+<label class="grid gap-1 text-sm">{{ $label }}<input required name="{{ $field }}" value="{{ old($field,$field==='city_name'?$item?->city?->name:($item?->{$field}??'')) }}" class="rounded border p-3 text-zinc-900"></label>
+@endforeach
+<label class="grid gap-1 text-sm">State<select name="state_id" required class="rounded border p-3 text-zinc-900"><option value="">Select State</option>@foreach($states as $state)<option value="{{ $state->id }}" @selected((string)old('state_id',$item?->state_id)===(string)$state->id)>{{ $state->name }}</option>@endforeach</select></label>
+<label class="flex items-center gap-2 text-sm"><input type="checkbox" name="is_default" value="1" @checked(old('is_default',$item?->is_default??false))> Set as default</label>

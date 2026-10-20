@@ -1,0 +1,12 @@
+{
+  "release": "3.0",
+  "routes_in_runtime": 411,
+  "unique_reference_routes": 411,
+  "postman_requests": 411,
+  "ai_routes": 20,
+  "new_ai_routes": 14,
+  "all_routes_matched": true,
+  "ai_contract_reference": "AI_STUDIO_API.md",
+  "html_ai_reference": "AI_STUDIO_API.html",
+  "note": "Full historical HTML is retained with AI override link; AI contract is current in separate HTML/Markdown."
+}
