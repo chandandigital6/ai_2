@@ -31,11 +31,11 @@
     <main id="main-content" class="mx-auto max-w-7xl px-4 py-8 lg:px-8">
 
         {{-- Hero + search --}}
-        <section class="rounded-3xl bg-gradient-to-r from-emerald-700 to-teal-700 p-7 text-white sm:p-10">
+        <section class="rounded-3xl bg-[#193e2e] p-7 text-white sm:p-10">
             <p class="text-xs font-bold uppercase tracking-widest text-emerald-100">Growya Marketplace</p>
-            <h1 class="mt-2 text-3xl font-black sm:text-4xl">Search local businesses, products & services</h1>
+            <h1 class="mt-2 text-3xl font-medium tracking-tight sm:text-4xl">Search local businesses, products & services</h1>
             <p class="mt-3 max-w-2xl text-sm text-emerald-50">
-                Discover real listings from active, approved businesses.
+                Discover verified businesses and their collections. Sponsored matches appear first.
             </p>
 
             <form method="GET" action="{{ route('public.search.index') }}" class="relative mt-6 flex flex-wrap gap-2"
@@ -125,7 +125,7 @@
 
         {{-- Results heading --}}
         <div class="mt-7 flex flex-wrap items-center justify-between gap-3">
-            <h2 class="text-xl font-black">
+            <h2 class="text-xl font-semibold">
                 {{ ucfirst($type) }}
                 <span class="text-sm font-normal text-slate-500">({{ $results->total() }} results)</span>
             </h2>
@@ -138,77 +138,13 @@
         {{-- Results --}}
         <div class="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             @forelse($results as $item)
-                @php
-                    $business = $type === 'businesses' ? $item : $item->business;
-                    $path = $type === 'businesses' ? ($item->cover ?: $item->logo) : $item->featured_image;
-                    $photo = $storageUrl($path);
-
-                    $link = match ($type) {
-                        'products' => route('public.business.product', [$business->slug, $item->slug]),
-                        'services' => route('public.business.service', [$business->slug, $item->slug]),
-                        default => route('public.business.home', $business->slug),
-                    };
-
-                    $price = $type === 'businesses' ? null : $item->offer_price ?? $item->price;
-                    $hasOffer =
-                        $type !== 'businesses' &&
-                        $item->offer_price !== null &&
-                        (float) $item->offer_price < (float) $item->price;
-                @endphp
-
-                <a href="{{ $link }}"
-                    class="group overflow-hidden rounded-2xl border border-slate-200 bg-white transition hover:shadow-lg">
-
-                    <div class="relative aspect-video bg-slate-100">
-                        @if ($photo)
-                            <img src="{{ $photo }}" alt="{{ $item->name }}" loading="lazy"
-                                class="h-full w-full {{ $type === 'products' ? 'object-contain p-2' : 'object-cover' }} transition group-hover:scale-[1.02]">
-                        @else
-                            <div
-                                class="flex h-full items-center justify-center text-3xl font-black text-slate-300">
-                                {{ mb_strtoupper(mb_substr($item->name, 0, 1)) }}
-                            </div>
-                        @endif
-
-                        <span
-                            class="absolute left-3 top-3 rounded-full bg-white/95 px-3 py-1 text-xs font-bold text-emerald-700 shadow-sm">
-                            {{ $type === 'businesses' ? '✓ Verified' : $singular }}
-                        </span>
-                    </div>
-
-                    <div class="space-y-2 p-5">
-                        <h3 class="line-clamp-1 text-lg font-bold">{{ $item->name }}</h3>
-
-                        @if ($type === 'businesses')
-                            <p class="text-sm text-slate-500">
-                                {{ $item->category?->name ?? 'Business' }}
-                                @if ($item->city?->name)
-                                    • {{ $item->city->name }}
-                                @endif
-                            </p>
-                        @else
-                            <p class="text-sm text-slate-500">
-                                By {{ $business->name }}
-                                @if ($item->category?->name)
-                                    • {{ $item->category->name }}
-                                @endif
-                            </p>
-
-                            <div class="flex items-baseline gap-2">
-                                <p class="font-black text-emerald-700">
-                                    {{ $price !== null ? '₹' . number_format((float) $price, 2) : 'Price on request' }}
-                                </p>
-                                @if ($hasOffer)
-                                    <p class="text-sm text-slate-400 line-through">
-                                        ₹{{ number_format((float) $item->price, 2) }}
-                                    </p>
-                                @endif
-                            </div>
-                        @endif
-
-                        <span class="inline-block pt-1 text-sm font-bold text-emerald-700">View Details →</span>
-                    </div>
-                </a>
+                @if($type === 'businesses')
+                    @include('public.partials.business-card',['business'=>$item])
+                @elseif($type === 'products')
+                    @include('public.businesses.partials.product-card',['product'=>$item,'business'=>$item->business])
+                @else
+                    @include('public.businesses.partials.service-card',['service'=>$item,'business'=>$item->business])
+                @endif
             @empty
                 <div
                     class="rounded-2xl border border-dashed border-slate-300 bg-white p-12 text-center sm:col-span-2 lg:col-span-3">

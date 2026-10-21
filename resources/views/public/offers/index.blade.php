@@ -15,7 +15,7 @@
     <main id="main-content" class="mx-auto max-w-7xl space-y-8 px-4 py-10 lg:px-8">
         <section class="rounded-3xl bg-gradient-to-r from-emerald-700 to-teal-700 px-6 py-12 text-white">
             <p class="text-xs font-bold uppercase tracking-widest text-emerald-100">Growya Marketplace</p>
-            <h1 class="mt-2 text-3xl font-black sm:text-4xl">Offers & Promotions</h1>
+            <h1 class="mt-2 text-3xl font-semibold sm:text-4xl">Offers & Promotions</h1>
             <p class="mt-3 text-emerald-50">Current offers from active, approved businesses.</p>
         </section>
         <form method="GET" action="{{ route('public.offers.index') }}"

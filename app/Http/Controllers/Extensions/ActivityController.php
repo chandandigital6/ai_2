@@ -82,9 +82,9 @@ class ActivityController extends ExtensionController
         if (! empty($d['city_id'])) {
             $q->where('city_id', $d['city_id']);
         }
-        $rows = $q->paginate(20);
+        $rows = $q->sponsoredFirst()->latest('id')->paginate(20);
         DB::table('search_logs')->insert(['user_id' => $r->user()?->id, 'query' => $d['query'], 'city_id' => $d['city_id'] ?? null, 'result_count' => $rows->total(), 'created_at' => now(), 'updated_at' => now()]);
 
-        return response()->json(['data' => $rows->through(fn ($b) => $b->only(['id', 'name', 'slug', 'logo', 'city_id']))]);
+        return response()->json(['data' => $rows->through(fn ($b) => $b->only(['id', 'name', 'slug', 'logo', 'city_id', 'is_sponsored']))]);
     }
 }

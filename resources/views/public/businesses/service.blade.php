@@ -130,13 +130,13 @@
                         </div>
                     @endif
 
-                    <h1 class="mt-2 text-3xl font-black leading-tight text-slate-950 md:text-4xl">
+                    <h1 class="mt-2 text-3xl font-semibold leading-tight text-slate-950 md:text-4xl">
                         {{ $service->name }}
                     </h1>
 
                     <div class="mt-5 flex flex-wrap items-end gap-3">
                         @if ($price !== null)
-                            <strong class="text-3xl font-black text-slate-950">₹{{ number_format($price, 2) }}</strong>
+                            <strong class="text-3xl font-semibold text-slate-950">₹{{ number_format($price, 2) }}</strong>
 
                             @if ($discount)
                                 <span class="pb-1 text-slate-400 line-through">₹{{ number_format($basePrice, 2) }}</span>
@@ -145,7 +145,7 @@
                                 </span>
                             @endif
                         @else
-                            <strong class="text-2xl font-black text-slate-700">Price on Request</strong>
+                            <strong class="text-2xl font-semibold text-slate-700">Price on Request</strong>
                         @endif
 
                         @if ($service->duration_minutes)
@@ -183,14 +183,14 @@
                         @if ($whatsapp)
                             <a href="https://wa.me/{{ $whatsapp }}?text={{ rawurlencode($sellerMessage) }}"
                                 target="_blank" rel="noopener noreferrer"
-                                class="rounded-2xl bg-emerald-600 px-5 py-4 text-center font-black text-white">
+                                class="rounded-2xl bg-emerald-600 px-5 py-4 text-center font-semibold text-white">
                                 WhatsApp Business
                             </a>
                         @endif
 
                         @if ($phone)
                             <a href="tel:{{ $phone }}"
-                                class="rounded-2xl bg-slate-950 px-5 py-4 text-center font-black text-white">
+                                class="rounded-2xl bg-slate-950 px-5 py-4 text-center font-semibold text-white">
                                 Call Business
                             </a>
                         @endif
@@ -221,7 +221,7 @@
 
 
                 <div class="border-t border-slate-200 pt-5">
-                    <h2 class="font-black text-slate-900">Offered by {{ $business->name }}</h2>
+                    <h2 class="font-semibold text-slate-900">Offered by {{ $business->name }}</h2>
                     <a class="mt-2 inline-block text-sm font-bold text-emerald-700"
                         href="{{ route('public.business.home', $business->slug) }}">
                         Visit Business Showroom →

@@ -261,12 +261,18 @@
                 driving distance nahi.</p>
         @endif
 
+        <p class="near-note">Sponsored matches appear first; your distance and other filters still apply.</p>
         <h2>{{ number_format($total) }} {{ $total === 1 ? 'business' : 'businesses' }} found</h2>
 
         <div class="near-results" style="margin:15px 0 20px">
             @forelse ($businesses as $business)
+                @php
+                    $nearPromotion = $paidPromotions[$business->id] ?? null;
+                    $nearUrl = $nearPromotion ? route('growya.promotions.click',$nearPromotion) : route('public.business.home',$business->slug);
+                @endphp
                 <article class="near-card">
-                    <h3><a href="{{ route('public.business.home', $business->slug) }}">{{ $business->name }}</a></h3>
+                    @if($business->is_sponsored)<span class="g-badge g-tone-amber">Sponsored</span>@endif
+                    <h3><a href="{{ $nearUrl }}">{{ $business->name }}</a></h3>
 
                     <p class="near-meta">
                         {{ $business->category?->name ?? 'Business' }} ·
@@ -281,7 +287,7 @@
                         <p class="near-meta">{{ \Illuminate\Support\Str::limit($business->address, 130) }}</p>
                     @endif
 
-                    <a class="near-btn" href="{{ route('public.business.home', $business->slug) }}">View showroom</a>
+                    <a class="near-btn" href="{{ $nearUrl }}">View showroom</a>
                 </article>
             @empty
                 <div class="near-panel">

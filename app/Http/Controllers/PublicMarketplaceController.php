@@ -4,7 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Business;
 use App\Models\Category;
-use App\Models\City;
+use App\Services\GrowyaFeaturedEligibilityService;
+use App\Services\GrowyaPaidPromotionService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -24,7 +25,7 @@ class PublicMarketplaceController extends Controller
             ->where('verification_status', 'approved')
             ->with(['category:id,name,slug', 'city:id,name', 'state:id,name']);
 
-        if (!empty($filters['q'])) {
+        if (! empty($filters['q'])) {
             $term = trim($filters['q']);
             $query->where(function ($sub) use ($term) {
                 $sub->where('name', 'like', "%{$term}%")
@@ -36,7 +37,7 @@ class PublicMarketplaceController extends Controller
             });
         }
 
-        if (!empty($filters['category'])) {
+        if (! empty($filters['category'])) {
             $query->whereHas('category', function ($cat) use ($filters) {
                 $cat->where('slug', $filters['category'])
                     ->where('category_type', 'business')
@@ -44,7 +45,7 @@ class PublicMarketplaceController extends Controller
             });
         }
 
-        if (!empty($filters['city'])) {
+        if (! empty($filters['city'])) {
             $cityName = trim($filters['city']);
             $query->whereHas('city', function ($city) use ($cityName) {
                 $city->where('name', 'like', "%{$cityName}%");
@@ -52,17 +53,14 @@ class PublicMarketplaceController extends Controller
         }
 
         // Paid promoted businesses rank first; subscription featured businesses remain next.
-        $paidService = app(\App\Services\GrowyaPaidPromotionService::class);
-        $paidIds = $paidService->businessIds();
-        if ($paidIds && ($filters['sort'] ?? 'newest') !== 'name') {
-            $query->orderByRaw('CASE WHEN businesses.id IN ('.implode(',', array_map('intval', $paidIds)).') THEN 0 ELSE 1 END');
-        }
+        $paidService = app(GrowyaPaidPromotionService::class);
+        $query->sponsoredFirst();
         // Featured boost is based on active subscription/override, not a static flag.
-        // Keep explicit name sorting alphabetical.
+        // Sort options apply within sponsored and organic groups.
         if (($filters['sort'] ?? 'newest') !== 'name') {
-            $featuredIds = app(\App\Services\GrowyaFeaturedEligibilityService::class)->eligibleIds();
+            $featuredIds = app(GrowyaFeaturedEligibilityService::class)->eligibleIds();
             if ($featuredIds) {
-                $query->orderByRaw('CASE WHEN businesses.id IN ('.implode(',',array_map('intval',$featuredIds)).') THEN 0 ELSE 1 END');
+                $query->orderByRaw('CASE WHEN businesses.id IN ('.implode(',', array_map('intval', $featuredIds)).') THEN 0 ELSE 1 END');
             }
         }
         switch ($filters['sort'] ?? 'newest') {
@@ -77,10 +75,7 @@ class PublicMarketplaceController extends Controller
         }
 
         $businesses = $query->paginate(12)->withQueryString();
-        $paidPromotions = \App\Models\GrowyaPaidPromotion::query()->live()
-            ->whereHas('package', fn($q)=>$q->where('target_type','business'))
-            ->whereIn('business_id',$businesses->pluck('id'))
-            ->orderByDesc('id')->get()->unique('business_id')->keyBy('business_id');
+        $paidPromotions = $paidService->forBusinesses($businesses->pluck('id'));
         $paidService->countImpressions($paidPromotions->keys()->all());
         $categories = Category::query()
             ->where('category_type', 'business')
@@ -92,6 +87,6 @@ class PublicMarketplaceController extends Controller
             ->orderBy('name')
             ->get(['id', 'name', 'slug']);
 
-        return view('public.marketplace.index', compact('businesses', 'categories'));
+        return view('public.marketplace.index', compact('businesses', 'categories', 'paidPromotions'));
     }
 }

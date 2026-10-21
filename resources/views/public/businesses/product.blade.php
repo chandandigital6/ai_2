@@ -5,6 +5,7 @@
     \Illuminate\Support\Str::limit(strip_tags($product->description ?: $product->name), 155))
 
 @section('content')
+    @if($product->is_sponsored)<div class="g-container pt-5"><span class="g-badge g-tone-amber">Sponsored product</span></div>@endif
     @php
         $assetUrl = function (?string $path) {
             if (!$path) {
@@ -196,12 +197,12 @@
                         </div>
                     @endif
 
-                    <h1 class="mt-2 text-3xl font-black leading-tight text-slate-950 md:text-4xl">
+                    <h1 class="mt-2 text-3xl font-semibold leading-tight text-slate-950 md:text-4xl">
                         {{ $product->name }}
                     </h1>
 
                     <div class="mt-5 flex flex-wrap items-end gap-3">
-                        <strong id="display-price" class="text-3xl font-black text-slate-950">
+                        <strong id="display-price" class="text-3xl font-semibold text-slate-950">
                             ₹{{ number_format($price, 2) }}
                         </strong>
 
@@ -357,21 +358,21 @@
                                 data-wa-msg="{{ $sellerMessage }}"
                                 href="https://wa.me/{{ $whatsapp }}?text={{ rawurlencode($sellerMessage) }}"
                                 target="_blank" rel="noopener noreferrer"
-                                class="rounded-2xl bg-emerald-600 px-5 py-4 text-center font-black text-white">
+                                class="rounded-2xl bg-emerald-600 px-5 py-4 text-center font-semibold text-white">
                                 WhatsApp Seller
                             </a>
                         @endif
 
                         @if ($phone)
                             <a href="tel:{{ $phone }}"
-                                class="rounded-2xl bg-slate-950 px-5 py-4 text-center font-black text-white">
+                                class="rounded-2xl bg-slate-950 px-5 py-4 text-center font-semibold text-white">
                                 Call Seller
                             </a>
                         @endif
 
                         @if (!$whatsapp && !$phone)
                             <a href="{{ route('public.business.contact', $business->slug) }}"
-                                class="rounded-2xl bg-slate-950 px-5 py-4 text-center font-black text-white">
+                                class="rounded-2xl bg-slate-950 px-5 py-4 text-center font-semibold text-white">
                                 Contact Business
                             </a>
                         @endif
@@ -399,7 +400,7 @@
 @endauth
 
                 <div class="border-t border-slate-200 pt-5">
-                    <h2 class="font-black text-slate-900">Sold by {{ $business->name }}</h2>
+                    <h2 class="font-semibold text-slate-900">Sold by {{ $business->name }}</h2>
                     <a class="mt-2 inline-block text-sm font-bold text-emerald-700"
                         href="{{ route('public.business.home', $business->slug) }}">
                         Visit Business Showroom →

@@ -2,3 +2,6 @@
 <meta name="csrf-token" content="{{ csrf_token() }}">
 <link rel="stylesheet" href="{{ asset('growya-ui/utilities.css') }}?v=20261013">
 @include('partials.growya-assets')
+
+<link rel="stylesheet" href="{{ asset('growya-ui/premium.css') }}?v=20261021-1">
+<script src="{{ asset('growya-ui/premium.js') }}?v=20261021-1" defer></script>

@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Services\GrowyaPaidPromotionService;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -12,6 +14,7 @@ class Product extends Model
     use SoftDeletes;
 
     protected $table = 'products';
+
     protected $fillable = [
         'business_id',
         'category_id',
@@ -40,6 +43,7 @@ class Product extends Model
     protected function casts(): array
     {
         return [
+            'is_sponsored' => 'boolean',
             'price' => 'decimal:2',
             'offer_price' => 'decimal:2',
             'stock_quantity' => 'integer',
@@ -50,6 +54,11 @@ class Product extends Model
             'is_trending' => 'boolean',
             'specifications' => 'array',
         ];
+    }
+
+    public function scopeSponsoredFirst(Builder $query): Builder
+    {
+        return app(GrowyaPaidPromotionService::class)->prioritize($query, 'product');
     }
 
     public function business(): BelongsTo
@@ -112,9 +121,6 @@ class Product extends Model
         return $this->hasMany(ActivityEvent::class, 'product_id');
     }
 
-
-
-
     public function images()
     {
         return $this->hasMany(ProductImage::class);
@@ -125,19 +131,15 @@ class Product extends Model
         return $this->hasMany(ProductVariant::class);
     }
 
-
-
     public function orderItems()
     {
         return $this->hasMany(OrderItem::class);
     }
 
-
-
     public function tags()
     {
         return $this->belongsToMany(
-            \App\Models\Tag::class,
+            Tag::class,
             'product_tag',
             'product_id',
             'tag_id'
@@ -147,21 +149,17 @@ class Product extends Model
     public function attributeValues()
     {
         return $this->belongsToMany(
-            \App\Models\AttributeValue::class,
+            AttributeValue::class,
             'product_attribute_values',
             'product_id',
             'attribute_value_id'
         )->withTimestamps();
     }
 
-
-
-
-
     public function stockMovements()
     {
         return $this->hasMany(
-            \App\Models\ProductStockMovement::class
+            ProductStockMovement::class
         );
     }
 }

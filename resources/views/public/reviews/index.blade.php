@@ -26,7 +26,7 @@
         {{-- Header --}}
         <div class="flex flex-wrap items-center justify-between gap-3">
             <div>
-                <h1 class="text-2xl font-black md:text-3xl">Reviews</h1>
+                <h1 class="text-2xl font-semibold md:text-3xl">Reviews</h1>
                 <p class="mt-1 text-sm text-slate-500">{{ $business->name }}</p>
             </div>
 
@@ -53,11 +53,11 @@
         <section class="grid gap-6 rounded-3xl border border-slate-200 bg-white p-6 md:grid-cols-[220px_1fr]">
             <div class="text-center md:border-r md:border-slate-100 md:pr-6">
                 @if ($total)
-                    <p class="text-5xl font-black text-slate-900">{{ number_format($average, 1) }}</p>
+                    <p class="text-5xl font-semibold text-slate-900">{{ number_format($average, 1) }}</p>
                     <p class="mt-1 text-xl tracking-wide text-amber-500">{{ $stars($average) }}</p>
                     <p class="mt-1 text-sm text-slate-500">{{ $total }} {{ $total === 1 ? 'review' : 'reviews' }}</p>
                 @else
-                    <p class="text-4xl font-black text-slate-300">—</p>
+                    <p class="text-4xl font-semibold text-slate-300">—</p>
                     <p class="mt-2 text-sm text-slate-500">Not rated yet</p>
                 @endif
             </div>
@@ -95,7 +95,7 @@
                     @endif
 
                     <div>
-                        <h2 class="text-lg font-black">{{ $myReview ? 'Edit Your Review' : 'Write a Review' }}</h2>
+                        <h2 class="text-lg font-semibold">{{ $myReview ? 'Edit Your Review' : 'Write a Review' }}</h2>
                         <p class="mt-1 text-sm text-slate-500">Share your experience with {{ $business->name }}.</p>
                     </div>
 
@@ -161,7 +161,7 @@
         @endif
         {{-- Reviews list --}}
         <section class="space-y-4">
-            <h2 class="text-lg font-black">Customer Reviews</h2>
+            <h2 class="text-lg font-semibold">Customer Reviews</h2>
 
             @forelse($reviews as $review)
                 @php $name = $review->user?->name ?? 'Customer'; @endphp
@@ -169,7 +169,7 @@
                 <article class="rounded-2xl border border-slate-200 bg-white p-5">
                     <div class="flex items-start gap-3">
                         <div
-                            class="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-emerald-100 font-black text-emerald-800">
+                            class="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-emerald-100 font-semibold text-emerald-800">
                             {{ mb_strtoupper(mb_substr($name, 0, 1)) }}
                         </div>
 
@@ -189,7 +189,7 @@
                             <div class="flex flex-wrap gap-3 mt-3">@foreach($review->photos as $photo)<a href="{{ $photo['url'] }}" target="_blank" rel="noopener"><img src="{{ $photo['url'] }}" alt="Customer review photo" loading="lazy" class="h-24 w-24 rounded-xl object-cover"></a>@endforeach</div>
                             @if ($review->business_reply)
                                 <div class="mt-4 rounded-xl border-l-4 border-emerald-500 bg-emerald-50 p-4">
-                                    <p class="text-xs font-extrabold uppercase tracking-wide text-emerald-700">
+                                    <p class="text-xs font-semibold uppercase tracking-wide text-emerald-700">
                                         Response from {{ $business->name }}
                                     </p>
                                     <p class="mt-1 whitespace-pre-line text-sm text-slate-700">

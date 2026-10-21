@@ -17,6 +17,7 @@ class PublicProductController extends Controller
         // Public visitors can see active businesses/products only.
         abort_unless(
             $business->status === 'active'
+            && $business->verification_status === 'approved'
             && $product->status === 'active',
             404
         );

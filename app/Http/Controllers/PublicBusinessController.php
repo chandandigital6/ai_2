@@ -3,11 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\Business;
+use App\Models\BusinessGallery;
 use App\Models\Product;
 use App\Models\Service;
-use App\Models\BusinessGallery;
-use Illuminate\Support\Facades\Schema;
+use App\Services\GrowyaPaidPromotionService;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Schema;
 
 class PublicBusinessController extends Controller
 {
@@ -34,7 +35,7 @@ class PublicBusinessController extends Controller
             $query->whereRaw('1 = 0');
         }
 
-        return $query;
+        return $query->sponsoredFirst();
     }
 
     private function servicesQuery(Business $business)
@@ -77,16 +78,19 @@ class PublicBusinessController extends Controller
         $todayHour = $business->hours->firstWhere('day_of_week', $now->dayOfWeek);
         $isOpen = null; // Unknown if hours not configured.
         if ($todayHour) {
-            $isOpen = !$todayHour->is_closed
-                && $todayHour->open_time
-                && $todayHour->close_time
-                && $now->format('H:i:s') >= $todayHour->open_time
-                && $now->format('H:i:s') < $todayHour->close_time;
+            $time = $now->format('H:i:s');
+            $open = $todayHour->open_time;
+            $close = $todayHour->close_time;
+            $isOpen = ! $todayHour->is_closed && $open && $close
+                && ($close >= $open ? ($time >= $open && $time < $close) : ($time >= $open || $time < $close));
         }
+
+        $paidProductPromotions = app(GrowyaPaidPromotionService::class)->forProducts($products->pluck('id'));
+        app(GrowyaPaidPromotionService::class)->countImpressions([], $paidProductPromotions->keys()->all());
 
         return view('public.businesses.home', compact(
             'business', 'products', 'services', 'gallery',
-            'todayHour', 'isOpen'
+            'todayHour', 'isOpen', 'paidProductPromotions'
         ));
     }
 
@@ -98,9 +102,12 @@ class PublicBusinessController extends Controller
             ->latest('id')
             ->paginate(12);
 
+        $paidProductPromotions = app(GrowyaPaidPromotionService::class)->forProducts($products->pluck('id'));
+        app(GrowyaPaidPromotionService::class)->countImpressions([], $paidProductPromotions->keys()->all());
+
         return view('public.businesses.products', compact(
             'business',
-            'products'
+            'products', 'paidProductPromotions'
         ));
     }
 
@@ -118,8 +125,7 @@ class PublicBusinessController extends Controller
     //     ));
     // }
 
-
-     public function product(string $slug, string $productSlug)
+    public function product(string $slug, string $productSlug)
     {
         $business = $this->business($slug);
 
