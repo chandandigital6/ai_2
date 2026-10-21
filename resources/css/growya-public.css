@@ -75,7 +75,8 @@ body.g-public { @apply bg-[#f8f9f6] font-sans text-[#202c27] antialiased; }
 .g-public .g-business-cover-initial { @apply grid h-full w-full place-items-center bg-gradient-to-br from-[#e9eedc] via-[#d4dfbf] to-[#93ab7f] text-5xl font-medium tracking-[-.08em] text-[#436444]; }
 .g-public .g-badge { @apply inline-flex items-center gap-1.5 rounded-full bg-[#eef5e7] px-2.5 py-1 text-[10px] font-semibold leading-4 text-[#406a39]; }
 .g-public .g-badge .g-icon { @apply h-3 w-3; }
-.g-public .g-verified-badge { @apply absolute bottom-3 left-3 bg-white/95 text-[#386842] backdrop-blur-sm; }
+/* Reset legacy top/right offsets so the badge cannot stretch across the cover. */
+.g-public .g-business-cover .g-verified-badge { @apply absolute top-auto right-auto bottom-3 left-3 h-auto w-fit whitespace-nowrap bg-white/95 text-[#386842] backdrop-blur-sm; }
 .g-public .g-sponsored-badge { @apply absolute right-3 top-3 z-10 rounded-md border border-[#cbd8a1] bg-[#f5f5dc] px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[.06em] text-[#665f31] shadow-sm; }
 .g-public .g-business-info { @apply px-5 pb-4 pt-5; }
 .g-public .g-card-category { @apply relative mb-2 flex items-center justify-between gap-2 text-[9px] font-semibold uppercase tracking-[.1em] text-[#77846f]; }

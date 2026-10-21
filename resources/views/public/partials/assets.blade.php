@@ -3,5 +3,5 @@
 <link rel="stylesheet" href="{{ asset('growya-ui/utilities.css') }}?v=20261013">
 @include('partials.growya-assets')
 
-<link rel="stylesheet" href="{{ asset('growya-ui/premium.css') }}?v=20261021-1">
+<link rel="stylesheet" href="{{ asset('growya-ui/premium.css') }}?v=20261021-2">
 <script src="{{ asset('growya-ui/premium.js') }}?v=20261021-1" defer></script>
