@@ -69,6 +69,9 @@
                                     $lead->next_follow_up_at &&
                                     $lead->next_follow_up_at->isPast() &&
                                     !in_array($lead->status, ['converted', 'closed'], true);
+
+                                // created_at null ho sakta hai, isliye pehle check karte hain
+                                $ageDays = $lead->created_at ? (int) floor($lead->created_at->diffInDays(now())) : null;
                             @endphp
                             <article draggable="true" data-lead="{{ $lead->id }}"
                                 data-status="{{ $key }}"
@@ -81,9 +84,14 @@
                                 <div class="flex flex-wrap gap-2 text-xs">
                                     <span
                                         class="rounded bg-zinc-100 px-2 py-1 text-zinc-800 dark:bg-zinc-700 dark:text-white">{{ ucfirst($lead->priority ?? 'medium') }}</span>
-                                    <span
+                                    {{-- <span
                                         class="rounded bg-zinc-100 px-2 py-1 text-zinc-800 dark:bg-zinc-700 dark:text-white">{{ $lead->created_at->diffInDays(now()) }}d
-                                        old</span>
+                                        old</span> --}}
+                                    @if ($ageDays !== null)
+                                        <span
+                                            class="rounded bg-zinc-100 px-2 py-1 text-zinc-800 dark:bg-zinc-700 dark:text-white">{{ $ageDays }}d
+                                            old</span>
+                                    @endif
                                 </div>
                                 @if ($lead->next_follow_up_at)
                                     <p class="text-xs {{ $overdue ? 'font-bold text-red-600' : 'text-zinc-500' }}">
