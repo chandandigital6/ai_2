@@ -1,5 +1,55 @@
-<form method="POST" enctype="multipart/form-data" action="{{ $item?route('extensions.tools.update',[$kind,$item->id]):route('extensions.tools.store',$kind) }}">@csrf @if($item)@method('PUT')@endif
-@if($kind==='settings')<div class="ex-grid"><label class="ex-field">Group<select name="group_name">@foreach(['branding','marketplace','notifications'] as $g)<option @selected($item?->group_name===$g)>{{ $g }}</option>@endforeach</select></label><label class="ex-field">Setting<select name="key_name">@foreach(['site_title','support_email','support_phone','welcome_text','show_banner','help_text'] as $k)<option @selected($item?->key_name===$k)>{{ $k }}</option>@endforeach</select></label></div><label class="ex-field">Value<textarea name="value" maxlength="3000">{{ $item?->value }}</textarea></label><input type="hidden" name="is_public" value="0"><label class="ex-field"><input type="checkbox" name="is_public" value="1" @checked($item?->is_public)> Show publicly</label>
-@elseif($kind==='festivals')<div class="ex-grid"><label class="ex-field">Festival name<input name="name" maxlength="200" required value="{{ $item?->name }}"></label><label class="ex-field">Festival date<input type="date" name="festival_date" value="{{ $item?->festival_date?->toDateString() }}" required></label></div><label class="ex-field">Default caption<textarea name="default_caption" maxlength="2200">{{ $item?->default_caption }}</textarea></label><label class="ex-field">Default image prompt<textarea name="default_prompt" maxlength="8000">{{ $item?->default_prompt }}</textarea></label>
-@else<div class="ex-grid"><label class="ex-field">Placement<select name="placement">@foreach(['home','marketplace','showroom'] as $p)<option @selected($item?->placement===$p)>{{ $p }}</option>@endforeach</select></label><label class="ex-field">City ID (optional)<input name="city_id" type="number" min="1" value="{{ $item?->city_id }}"></label><label class="ex-field">Image<input type="file" name="image" accept="image/jpeg,image/png,image/webp" @required(!$item)></label><label class="ex-field">Button label<input name="cta_text" maxlength="100" value="{{ $item?->cta_text }}"></label><label class="ex-field">Button URL<input type="url" name="cta_url" placeholder="https://..." value="{{ $item?->cta_url }}"></label><label class="ex-field">Sort order<input type="number" name="sort_order" min="0" max="10000" required value="{{ $item?->sort_order??0 }}"></label><label class="ex-field">Starts ({{ config('app.timezone') }})<input type="datetime-local" name="starts_at" value="{{ $item?->starts_at?->format('Y-m-d\TH:i') }}"></label><label class="ex-field">Ends<input type="datetime-local" name="ends_at" value="{{ $item?->ends_at?->format('Y-m-d\TH:i') }}"></label></div>@endif
-@if($kind!=='settings')<label class="ex-field">Status<select name="status"><option value="active" @selected($item?->status==='active')>Active</option><option value="inactive" @selected($item?->status==='inactive')>Inactive</option></select></label>@endif<button class="g-btn g-btn-primary">Save</button></form>
+<form method="POST" enctype="multipart/form-data"
+    action="{{ $item ? route('extensions.tools.update', [$kind, $item->id]) : route('extensions.tools.store', $kind) }}">
+    @csrf @if ($item)
+        @method('PUT')
+    @endif
+    @if ($kind === 'settings')
+        <div class="ex-grid"><label class="ex-field">Group<select name="group_name">
+                    @foreach (['branding', 'marketplace', 'notifications'] as $g)
+                        <option @selected($item?->group_name === $g)>{{ $g }}</option>
+                    @endforeach
+                </select>
+            </label><label class="ex-field">Setting<select name="key_name">
+                    @foreach (['site_title', 'support_email', 'support_phone', 'welcome_text', 'show_banner', 'help_text'] as $k)
+                        <option @selected($item?->key_name === $k)>{{ $k }}</option>
+                    @endforeach
+                </select>
+            </label></div><label class="ex-field">Value
+            <textarea name="value" maxlength="3000">{{ $item?->value }}</textarea>
+        </label><input type="hidden" name="is_public" value="0"><label class="ex-field"><input type="checkbox"
+                name="is_public" value="1" @checked($item?->is_public)> Show publicly</label>
+    @elseif($kind === 'festivals')
+        <div class="ex-grid"><label class="ex-field">Festival name<input name="name" maxlength="200" required
+                    value="{{ $item?->name }}"></label><label class="ex-field">Festival date<input type="date"
+                    name="festival_date" value="{{ $item?->festival_date?->toDateString() }}" required></label></div>
+        <label class="ex-field">Default caption
+            <textarea name="default_caption" maxlength="2200">{{ $item?->default_caption }}</textarea>
+        </label><label class="ex-field">Default image prompt
+            <textarea name="default_prompt" maxlength="8000">{{ $item?->default_prompt }}</textarea>
+        </label>
+    @else<div class="ex-grid"><label class="ex-field">Placement<select name="placement">
+                    @foreach (['home', 'marketplace', 'showroom'] as $p)
+                        <option @selected($item?->placement === $p)>{{ $p }}</option>
+                    @endforeach
+                </select>
+            </label><label class="ex-field">City ID (optional)<input name="city_id" type="number" min="1"
+                    value="{{ $item?->city_id }}"></label><label class="ex-field">Image<input type="file"
+                    name="image" accept="image/jpeg,image/png,image/webp" @required(!$item)></label><label
+                class="ex-field">Button label<input name="cta_text" maxlength="100"
+                    value="{{ $item?->cta_text }}"></label><label class="ex-field">Button URL<input type="url"
+                    name="cta_url" placeholder="https://..." value="{{ $item?->cta_url }}"></label><label
+                class="ex-field">Sort order<input type="number" name="sort_order" min="0" max="10000"
+                    required value="{{ $item?->sort_order ?? 0 }}"></label><label class="ex-field">Starts
+                ({{ config('app.timezone') }})<input type="datetime-local" name="starts_at"
+                    value="{{ $item?->starts_at?->format('Y-m-d\TH:i') }}"></label><label class="ex-field">Ends<input
+                    type="datetime-local" name="ends_at" value="{{ $item?->ends_at?->format('Y-m-d\TH:i') }}"></label>
+        </div>
+    @endif
+    @if ($kind !== 'settings')
+        <label class="ex-field">Status<select name="status">
+                <option value="active" @selected($item?->status === 'active')>Active</option>
+                <option value="inactive" @selected($item?->status === 'inactive')>Inactive</option>
+            </select></label>
+    @endif
+    <button class="g-btn g-btn-primary">Save</button>
+</form>

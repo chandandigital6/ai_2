@@ -18,6 +18,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class SocialController extends ExtensionController
 {
@@ -31,11 +32,18 @@ class SocialController extends ExtensionController
     public function connect(Request $r, Business $business, MetaService $meta)
     {
         $this->business($r, $business, 'social.manage');
-        $meta->base();
+        try {
+            $meta->base();
+        } catch (HttpException $e) {
+            if ($e->getStatusCode() !== 503) {
+                throw $e;
+            }
+            throw ValidationException::withMessages(['social_connection' => 'Facebook connection is not configured. Ask the administrator to set the Meta App ID, secret, API version and HTTPS callback URL.']);
+        }
         $state = Str::random(64);
         $connection = Str::random(64);
-        Cache::put('meta-state:'.hash('sha256', $state), ['business_id' => $business->id, 'user_id' => $r->user()->id, 'connection' => $connection], now()->addMinutes(10));
-        $url = 'https://www.facebook.com/'.config('growya_extensions.meta.version').'/dialog/oauth?'.http_build_query(['client_id' => config('growya_extensions.meta.app_id'), 'redirect_uri' => config('growya_extensions.meta.redirect_uri'), 'state' => $state, 'scope' => 'pages_show_list,pages_read_engagement,pages_manage_posts,instagram_basic,instagram_content_publish']);
+        Cache::put('meta-state:'.hash('sha256', $state), ['business_id' => $business->id, 'user_id' => $r->user()->id, 'connection' => $connection, 'web' => ! $r->is('api/*')], now()->addMinutes(10));
+        $url = 'https://www.facebook.com/'.config('growya_extensions.meta.version').'/dialog/oauth?'.http_build_query(['client_id' => config('growya_extensions.meta.app_id'), 'redirect_uri' => config('growya_extensions.meta.redirect_uri'), 'state' => $state, 'auth_type' => 'rerequest', 'scope' => 'pages_show_list,pages_read_engagement,pages_manage_posts,instagram_basic,instagram_content_publish']);
         if (! $r->is('api/*')) {
             $r->session()->put('growya_social_connection', $connection);
 
@@ -58,6 +66,9 @@ class SocialController extends ExtensionController
         if (! empty($d['code'])) {
             try {
                 $pages = $meta->pages($d['code']);
+                if (empty($pages)) {
+                    $error = 'Facebook returned no available Pages. Reconnect, allow Page access and select a Page you manage. Instagram must be a professional account linked to that Page.';
+                }
             } catch (\Throwable $e) {
                 $error = 'Meta connection failed. Check app access, permissions and callback configuration.';
             }
@@ -65,6 +76,14 @@ class SocialController extends ExtensionController
             $error = 'Connection cancelled.';
         }
         Cache::put('meta-result:'.hash('sha256', $context['connection']), encrypt(['business_id' => $b->id, 'user_id' => $user->id, 'pages' => $pages, 'error' => $error]), now()->addMinutes(10));
+
+        // Only redirect the same signed-in browser that started this connection.
+        // API/mobile callbacks keep their existing completion page contract.
+        if (($context['web'] ?? false) && $r->user()?->id === $user->id
+            && $r->session()->get('growya_social_connection') === $context['connection']) {
+            return redirect()->route('extensions.workspace', [$b, 'social'])
+                ->with('social_notice', $error ?: 'Authorization received. Choose the Facebook Page or Instagram account below to finish connecting.');
+        }
 
         return response()->view('extensions.oauth-complete', ['business' => $b, 'error' => $error]);
     }
@@ -103,6 +122,11 @@ class SocialController extends ExtensionController
             return SocialAccount::updateOrCreate(['business_id' => $business->id, 'platform' => $d['platform'], 'external_id' => $id], ['account_name' => $d['platform'] === 'instagram' ? ($p['instagram_business_account']['username'] ?? $p['name']) : $p['name'], 'access_token' => $p['access_token'], 'refresh_token' => null, 'connection_status' => 'connected', 'metadata' => ['page_id' => $p['id']]]);
         }, 3);
 
+        if (! $r->is('api/*') && ! $r->expectsJson()) {
+            return redirect()->route('extensions.workspace', [$business, 'social'])
+                ->with('success', ucfirst($account->platform).' account connected: '.$account->account_name);
+        }
+
         return $this->reply($r, $account->toArray(), 201);
     }
 
@@ -119,7 +143,7 @@ class SocialController extends ExtensionController
     {
         $this->business($r, $business, 'social.view');
 
-        return response()->json(['data' => SocialPost::with('social_post_platforms', 'social_post_media')->where('business_id', $business->id)->latest('id')->paginate(20)]);
+        return response()->json(['data' => SocialPost::with('social_post_platforms.social_account', 'social_post_media')->where('business_id', $business->id)->latest('id')->paginate(20)]);
     }
 
     public function store(Request $r, Business $business)

@@ -1,17 +1,140 @@
 <x-layouts::app title="AI plans & approvals">
-@include('extensions.style') @include('extensions.ai-style')
-<div class="g-page" data-ai-root><div class="ai-toast" role="alert" aria-live="assertive" hidden></div>
-<div class="g-page-heading"><div><p class="g-kicker">Super admin · AI management</p><h1>AI plans & approvals</h1><p class="ex-note">Create packages → owner requests → verify payment → approve credits.</p></div></div>
-<section class="ex-card"><h2>{{ $editing ? 'Edit package #'.$editing->id : 'Create an AI package' }}</h2><p class="ex-note">Retail prices are yours to set. Internal credits are separate from OpenAI billing. Editing a package preserves the original models, prices and limits of existing purchases.</p>
-<form data-ai-form action="{{ $editing ? route('extensions.ai.plans.update',$editing) : route('extensions.ai.plans.store') }}" method="POST">@csrf @if($editing) @method('PUT') @endif
-<div class="ex-grid"><label class="ex-field">Package name<input name="name" value="{{ $editing?->name }}" maxlength="120" required></label>
-<label class="ex-field">Selling price (₹ INR)<input name="price_rupees" type="number" step="0.01" min="0" max="1000000" value="{{ number_format(($editing?->price_paise ?? 0)/100,2,'.','') }}" required><small>No automatic GST or payment collection.</small></label>
-@foreach(['credits'=>['Package credits',300,1,1000000],'valid_days'=>['Validity in days from approval',30,1,3650],'text_credits'=>['Credits per caption',1,1,1000000],'image_credits'=>['Credits per image',10,1,1000000],'max_prompts'=>['Maximum saved prompts',3,0,200],'max_references'=>['Reference image allowance (plus one logo)',2,0,10]] as $field=>[$label,$default,$min,$max])<label class="ex-field">{{ $label }}<input type="number" name="{{ $field }}" value="{{ $editing?->$field ?? $default }}" min="{{ $min }}" max="{{ $max }}" required></label>@endforeach
-@foreach(['text'=>'Caption model','image'=>'Image model'] as $type=>$label)<label class="ex-field">{{ $label }}<select name="{{ $type }}_model"><option value="">Not included</option>@foreach(config('growya_ai.'.$type.'_models') as $model=>$name)<option value="{{ $model }}" @selected(($editing?->{$type.'_model'} ?? '')===$model)>{{ $name }} · {{ $model }}</option>@endforeach</select></label>@endforeach
-<label class="ex-field">Package visibility<select name="is_active"><option value="0" @selected(!$editing?->is_active)>Draft / inactive</option><option value="1" @selected($editing?->is_active)>Active · owner can request</option></select></label></div>
-<label class="ex-field">Description<textarea name="description" maxlength="2000">{{ $editing?->description }}</textarea></label><button class="g-btn g-btn-primary">{{ $editing ? 'Save package changes' : 'Create package' }}</button>@if($editing)<a class="g-btn g-btn-secondary" href="{{ route('extensions.ai.admin') }}">New package</a>@endif<p data-form-error class="ai-error" role="alert"></p></form></section>
-<section class="ex-card"><h2>Packages</h2><div class="ex-scroll"><table class="ex-table"><thead><tr><th>Package</th><th>Price / credits / days</th><th>Models & cost</th><th>Prompts / references</th><th>Status</th><th></th></tr></thead><tbody>@forelse($plans as $plan)<tr><td>{{ $plan->name }}</td><td>₹{{ number_format($plan->price_paise/100,2) }}<br>{{ $plan->credits }} credits · {{ $plan->valid_days }} days</td><td>{{ $plan->text_model ?: 'No text' }} · {{ $plan->text_credits }} credits<br>{{ $plan->image_model ?: 'No image' }} · {{ $plan->image_credits }} credits</td><td>{{ $plan->max_prompts }} / {{ $plan->max_references }} + logo</td><td>{{ $plan->is_active ? 'Active' : 'Draft' }}</td><td><a class="g-btn g-btn-secondary" href="{{ route('extensions.ai.admin',['edit'=>$plan->id]) }}">Edit</a></td></tr>@empty<tr><td colspan="6">Create a package above or run AiPlanSeeder for draft examples.</td></tr>@endforelse</tbody></table></div></section>
-<section class="ex-card"><div class="ex-row"><h2>Owner requests</h2><a class="g-btn g-btn-secondary" href="{{ route('extensions.ai.admin',['status'=>'pending']) }}">Pending</a><a class="g-btn g-btn-secondary" href="{{ route('extensions.ai.admin') }}">All requests</a></div><p class="ai-warning">Verify the owner’s payment/reference before approving. Approval grants the package once; it does not charge a payment method.</p>
-@forelse($requests as $purchase)<article class="ai-plan" style="margin:15px 0"><div class="ex-row"><h3>#{{ $purchase->id }} · {{ $purchase->business?->name ?? 'Business' }}</h3><span class="ex-status">{{ $purchase->status }}</span><a class="g-btn g-btn-secondary" href="{{ route('extensions.workspace',[$purchase->business_id,'ai']) }}">Open business AI studio</a></div><p><b>{{ $purchase->plan_snapshot['name'] }}</b> · ₹{{ number_format($purchase->plan_snapshot['price_paise']/100,2) }} · {{ $purchase->plan_snapshot['credits'] }} credits · {{ $purchase->plan_snapshot['valid_days'] }} days</p><p class="ex-note">Text: {{ $purchase->plan_snapshot['text_model'] ?: 'Not included' }} · Image: {{ $purchase->plan_snapshot['image_model'] ?: 'Not included' }}<br>{{ $purchase->plan_snapshot['max_prompts'] }} prompts · {{ $purchase->plan_snapshot['max_references'] }} references + logo</p><p class="ex-note">Owner reference: {{ $purchase->payment_reference ?: 'Not supplied' }}<br>Owner message: {{ $purchase->note ?: '—' }}</p>@if($purchase->status==='pending')<form data-ai-form action="{{ route('extensions.ai.requests.review',$purchase) }}" method="POST">@csrf<div class="ex-grid"><label class="ex-field">Decision<select name="decision"><option value="approved">Approve & grant credits</option><option value="rejected">Reject request</option></select></label><label class="ex-field">Message / reason (required for rejection)<textarea name="review_note" maxlength="2000"></textarea></label></div><button class="g-btn g-btn-primary">Confirm review</button><p data-form-error class="ai-error" role="alert"></p></form>@else<p class="ex-note">Admin: {{ $purchase->review_note ?: '—' }} @if($purchase->expires_at) · Expires {{ $purchase->expires_at->timezone('Asia/Kolkata')->format('d M Y, h:i A') }} IST @endif</p>@endif</article>@empty<p>No package requests found.</p>@endforelse
-{{ $requests->links() }}</section></div><script src="{{ asset('js/growya-ai.js') }}?v=20261020-ai3" data-navigate-once></script>
+    @include('extensions.style') @include('extensions.ai-style')
+    <div class="g-page" data-ai-root>
+        <div class="ai-toast" role="alert" aria-live="assertive" hidden></div>
+        <div class="g-page-heading">
+            <div>
+                <p class="g-kicker">Super admin · AI management</p>
+                <h1>AI plans & approvals</h1>
+                <p class="ex-note">Create packages → owner requests → verify payment → approve credits.</p>
+            </div>
+        </div>
+        <section class="ex-card">
+            <h2>{{ $editing ? 'Edit package #' . $editing->id : 'Create an AI package' }}</h2>
+            <p class="ex-note">Retail prices are yours to set. Internal credits are separate from OpenAI billing. Editing
+                a package preserves the original models, prices and limits of existing purchases.</p>
+            <form data-ai-form
+                action="{{ $editing ? route('extensions.ai.plans.update', $editing) : route('extensions.ai.plans.store') }}"
+                method="POST">@csrf @if ($editing)
+                    @method('PUT')
+                @endif
+                <div class="ex-grid"><label class="ex-field">Package name<input name="name"
+                            value="{{ $editing?->name }}" maxlength="120" required></label>
+                    <label class="ex-field">Selling price (₹ INR)<input name="price_rupees" type="number"
+                            step="0.01" min="0" max="1000000"
+                            value="{{ number_format(($editing?->price_paise ?? 0) / 100, 2, '.', '') }}" required><small>No
+                            automatic GST or payment collection.</small></label>
+                    @foreach (['credits' => ['Package credits', 300, 1, 1000000], 'valid_days' => ['Validity in days from approval', 30, 1, 3650], 'text_credits' => ['Credits per caption', 1, 1, 1000000], 'image_credits' => ['Credits per image', 10, 1, 1000000], 'max_prompts' => ['Maximum saved prompts', 3, 0, 200], 'max_references' => ['Reference image allowance (plus one logo)', 2, 0, 10]] as $field => [$label, $default, $min, $max])
+                        <label class="ex-field">{{ $label }}<input type="number" name="{{ $field }}"
+                                value="{{ $editing?->$field ?? $default }}" min="{{ $min }}"
+                                max="{{ $max }}" required></label>
+                    @endforeach
+                    @foreach (['text' => 'Caption model', 'image' => 'Image model'] as $type => $label)
+                        <label class="ex-field">{{ $label }}<select name="{{ $type }}_model">
+                                <option value="">Not included</option>
+                                @foreach (config('growya_ai.' . $type . '_models') as $model => $name)
+                                    <option value="{{ $model }}" @selected(($editing?->{$type . '_model'} ?? '') === $model)>
+                                        {{ $name }} · {{ $model }}</option>
+                                @endforeach
+                            </select>
+                        </label>
+                    @endforeach
+                    <label class="ex-field">Package visibility<select name="is_active">
+                            <option value="0" @selected(!$editing?->is_active)>Draft / inactive</option>
+                            <option value="1" @selected($editing?->is_active)>Active · owner can request</option>
+                        </select></label>
+                </div>
+                <label class="ex-field">Description
+                    <textarea name="description" maxlength="2000">{{ $editing?->description }}</textarea>
+                </label><button
+                    class="g-btn g-btn-primary">{{ $editing ? 'Save package changes' : 'Create package' }}</button>
+                @if ($editing)
+                    <a class="g-btn g-btn-secondary" href="{{ route('extensions.ai.admin') }}">New package</a>
+                @endif
+                <p data-form-error class="ai-error" role="alert">
+                </p>
+            </form>
+        </section>
+        <section class="ex-card">
+            <h2>Packages</h2>
+            <div class="ex-scroll">
+                <table class="ex-table">
+                    <thead>
+                        <tr>
+                            <th>Package</th>
+                            <th>Price / credits / days</th>
+                            <th>Models & cost</th>
+                            <th>Prompts / references</th>
+                            <th>Status</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($plans as $plan)
+                            <tr>
+                                <td>{{ $plan->name }}</td>
+                                <td>₹{{ number_format($plan->price_paise / 100, 2) }}<br>{{ $plan->credits }} credits ·
+                                    {{ $plan->valid_days }} days</td>
+                                <td>{{ $plan->text_model ?: 'No text' }} · {{ $plan->text_credits }}
+                                    credits<br>{{ $plan->image_model ?: 'No image' }} · {{ $plan->image_credits }}
+                                    credits</td>
+                                <td>{{ $plan->max_prompts }} / {{ $plan->max_references }} + logo</td>
+                                <td>{{ $plan->is_active ? 'Active' : 'Draft' }}</td>
+                                <td><a class="g-btn g-btn-secondary"
+                                        href="{{ route('extensions.ai.admin', ['edit' => $plan->id]) }}">Edit</a></td>
+                        </tr>@empty<tr>
+                                <td colspan="6">Create a package above or run AiPlanSeeder for draft examples.</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </section>
+        <section class="ex-card">
+            <div class="ex-row">
+                <h2>Owner requests</h2><a class="g-btn g-btn-secondary"
+                    href="{{ route('extensions.ai.admin', ['status' => 'pending']) }}">Pending</a><a
+                    class="g-btn g-btn-secondary" href="{{ route('extensions.ai.admin') }}">All requests</a>
+            </div>
+            <p class="ai-warning">Verify the owner’s payment/reference before approving. Approval grants the package
+                once; it does not charge a payment method.</p>
+            @forelse($requests as $purchase)
+                <article class="ai-plan" style="margin:15px 0">
+                    <div class="ex-row">
+                        <h3>#{{ $purchase->id }} · {{ $purchase->business?->name ?? 'Business' }}</h3><span
+                            class="ex-status">{{ $purchase->status }}</span><a class="g-btn g-btn-secondary"
+                            href="{{ route('extensions.workspace', [$purchase->business_id, 'ai']) }}">Open business AI
+                            studio</a>
+                    </div>
+                    <p><b>{{ $purchase->plan_snapshot['name'] }}</b> ·
+                        ₹{{ number_format($purchase->plan_snapshot['price_paise'] / 100, 2) }} ·
+                        {{ $purchase->plan_snapshot['credits'] }} credits ·
+                        {{ $purchase->plan_snapshot['valid_days'] }} days</p>
+                    <p class="ex-note">Text: {{ $purchase->plan_snapshot['text_model'] ?: 'Not included' }} · Image:
+                        {{ $purchase->plan_snapshot['image_model'] ?: 'Not included' }}<br>{{ $purchase->plan_snapshot['max_prompts'] }}
+                        prompts · {{ $purchase->plan_snapshot['max_references'] }} references + logo</p>
+                    <p class="ex-note">Owner reference: {{ $purchase->payment_reference ?: 'Not supplied' }}<br>Owner
+                        message: {{ $purchase->note ?: '—' }}</p>
+                    @if ($purchase->status === 'pending')
+                        <form data-ai-form action="{{ route('extensions.ai.requests.review', $purchase) }}"
+                            method="POST">@csrf<div class="ex-grid"><label class="ex-field">Decision<select
+                                        name="decision">
+                                        <option value="approved">Approve & grant credits</option>
+                                        <option value="rejected">Reject request</option>
+                                    </select></label><label class="ex-field">Message / reason (required for rejection)
+                                    <textarea name="review_note" maxlength="2000"></textarea>
+                                </label></div><button class="g-btn g-btn-primary">Confirm review</button>
+                            <p data-form-error class="ai-error" role="alert"></p>
+                    </form>@else<p class="ex-note">Admin: {{ $purchase->review_note ?: '—' }} @if ($purchase->expires_at)
+                                · Expires {{ $purchase->expires_at->timezone('Asia/Kolkata')->format('d M Y, h:i A') }}
+                                IST
+                            @endif
+                        </p>
+                    @endif
+            </article>@empty<p>No package requests found.</p>
+            @endforelse
+            {{ $requests->links() }}
+        </section>
+    </div>
+    <script src="{{ asset('js/growya-ai.js') }}?v=20261020-ai3" data-navigate-once></script>
 </x-layouts::app>

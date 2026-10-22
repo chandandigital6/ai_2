@@ -1,1 +1,113 @@
-<style>.ex-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:20px}.ex-field{display:block;margin:12px 0;font-size:13px;font-weight:600}.ex-field input:not([type=checkbox]),.ex-field select,.ex-field textarea{display:block;width:100%;margin-top:7px;padding:11px;border:1px solid #cad5d3;border-radius:9px;color:inherit;background:transparent}.ex-row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}.ex-card{border:1px solid #dce6e3;border-radius:15px;padding:22px;margin:18px 0}.ex-card h2{font-size:18px;font-weight:700;margin-bottom:12px}.ex-table{width:100%;border-collapse:collapse;font-size:13px}.ex-table td,.ex-table th{text-align:left;padding:12px;border-bottom:1px solid #dce6e3}.ex-scroll{overflow:auto}.ex-note{font-size:13px;line-height:1.7;opacity:.8}.ex-card form{margin:10px 0}.ex-status{display:inline-block;padding:4px 9px;border-radius:7px;background:#e5f2ed;color:#155845;font-size:12px}.ex-output{white-space:pre-wrap;line-height:1.6;font-size:14px;margin:12px 0}.ex-tab{display:inline-block;padding:10px 14px;border-radius:9px;border:1px solid #dce6e3}.ex-tab.active{background:#155845;color:#fff}.ex-inline{max-width:200px}.ex-thumb{width:160px;height:130px;object-fit:cover;border-radius:10px}</style>
+<style>
+    .ex-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+        gap: 20px
+    }
+
+    .ex-field {
+        display: block;
+        margin: 12px 0;
+        font-size: 13px;
+        font-weight: 600
+    }
+
+    .ex-field input:not([type=checkbox]),
+    .ex-field select,
+    .ex-field textarea {
+        display: block;
+        width: 100%;
+        margin-top: 7px;
+        padding: 11px;
+        border: 1px solid #cad5d3;
+        border-radius: 9px;
+        color: inherit;
+        background: transparent
+    }
+
+    .ex-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: center
+    }
+
+    .ex-card {
+        border: 1px solid #dce6e3;
+        border-radius: 15px;
+        padding: 22px;
+        margin: 18px 0
+    }
+
+    .ex-card h2 {
+        font-size: 18px;
+        font-weight: 700;
+        margin-bottom: 12px
+    }
+
+    .ex-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px
+    }
+
+    .ex-table td,
+    .ex-table th {
+        text-align: left;
+        padding: 12px;
+        border-bottom: 1px solid #dce6e3
+    }
+
+    .ex-scroll {
+        overflow: auto
+    }
+
+    .ex-note {
+        font-size: 13px;
+        line-height: 1.7;
+        opacity: .8
+    }
+
+    .ex-card form {
+        margin: 10px 0
+    }
+
+    .ex-status {
+        display: inline-block;
+        padding: 4px 9px;
+        border-radius: 7px;
+        background: #e5f2ed;
+        color: #155845;
+        font-size: 12px
+    }
+
+    .ex-output {
+        white-space: pre-wrap;
+        line-height: 1.6;
+        font-size: 14px;
+        margin: 12px 0
+    }
+
+    .ex-tab {
+        display: inline-block;
+        padding: 10px 14px;
+        border-radius: 9px;
+        border: 1px solid #dce6e3
+    }
+
+    .ex-tab.active {
+        background: #155845;
+        color: #fff
+    }
+
+    .ex-inline {
+        max-width: 200px
+    }
+
+    .ex-thumb {
+        width: 160px;
+        height: 130px;
+        object-fit: cover;
+        border-radius: 10px
+    }
+</style>

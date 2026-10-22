@@ -43,12 +43,16 @@ class WorkspaceController extends ExtensionController
                 'presets' => AiPromptPreset::where('business_id', $business->id)->orderBy('name')->get()];
         }
         if ($section === 'social') {
-            $data = ['accounts' => SocialAccount::where('business_id', $business->id)->get(), 'posts' => SocialPost::with('social_post_platforms')->where('business_id', $business->id)->latest('id')->paginate(15), 'schedules' => SocialSchedule::where('business_id', $business->id)->latest('id')->get(), 'candidates' => [], 'festivals' => Festival::where('status', 'active')->where('festival_date', '>=', today())->orderBy('festival_date')->limit(30)->get()];
+            $data = ['accounts' => SocialAccount::where('business_id', $business->id)->get(), 'posts' => SocialPost::with('social_post_platforms.social_account')->where('business_id', $business->id)->latest('id')->paginate(15), 'schedules' => SocialSchedule::where('business_id', $business->id)->latest('id')->get(), 'candidates' => [], 'festivals' => Festival::where('status', 'active')->where('festival_date', '>=', today())->orderBy('festival_date')->limit(30)->get()];
             $key = $r->session()->get('growya_social_connection');
             $cached = $key ? Cache::get('meta-result:'.hash('sha256', $key)) : null;
+            if ($key && ! $cached) {
+                $data['connectionError'] = 'Page selection has expired. Reconnect to retrieve your Facebook Pages and linked Instagram accounts.';
+            }
             if ($cached) {
                 $result = decrypt($cached);
                 if ((int) $result['user_id'] === (int) $r->user()->id && (int) $result['business_id'] === (int) $business->id) {
+                    $data['connectionAttempted'] = true;
                     $data['connectionKey'] = $key;
                     $data['candidates'] = collect($result['pages'])->map(fn ($p) => ['id' => $p['id'], 'name' => $p['name'], 'instagram' => $p['instagram_business_account'] ?? null])->all();
                     $data['connectionError'] = $result['error'];

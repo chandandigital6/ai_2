@@ -1,7 +1,78 @@
-<x-layouts::app :title="$catalog[$kind][0]">@include('extensions.style')
-<div class="g-page"><div class="g-page-heading"><div><p class="g-kicker">Platform administration</p><h1>{{ $catalog[$kind][0] }}</h1></div></div><div class="ex-row">@foreach($catalog  as $key=>[$label,$class,$permission])@if(auth()->user()->hasRole('super_admin','web')||auth()->user()->can($permission))<a class="ex-tab {{ $key===$kind?'active':'' }}" href="{{ route('extensions.admin',$key) }}">{{ $label }}</a>@endif @endforeach</div>
-@if(session('success'))<div class="g-alert g-tone-green mt-4">{{ session('success') }}</div>@endif @if($errors->any())<div class="g-alert g-tone-red mt-4">@foreach($errors->all() as $e)<p>{{ $e }}</p>@endforeach</div>@endif
-@if(in_array($kind,['banners','settings','festivals']))<details class="ex-card" open><summary>Create {{ rtrim($catalog[$kind][0],'s') }}</summary>@include('extensions.admin-form',['item'=>null])</details>@endif
-@foreach($rows  as $item)<section class="ex-card"><div class="ex-row"><h2>#{{ $item->id }} · {{ $item->name??$item->key_name??$item->placement??$item->action??$item->reportable_type }}</h2>@if($item->status)<span class="ex-status">{{ $item->status }}</span>@endif</div>
-@if($kind==='banners')<img class="ex-thumb" src="{{ Storage::disk('public')->url($item->media) }}" alt="Banner"><p>{{ $item->cta_text }}</p>@elseif($kind==='settings')<p>{{ $item->group_name }} / {{ $item->key_name }}: {{ $item->value }}</p>@elseif($kind==='festivals')<p>{{ $item->festival_date?->format('d M Y') }}</p><p>{{ $item->default_caption }}</p>@elseif($kind==='reports')<p>Reported {{ $item->reportable_type }} #{{ $item->reportable_id }} by account #{{ $item->user_id }}</p><p class="ex-output">{{ $item->reason }}</p><form method="POST" action="{{ route('extensions.tools.update',[$kind,$item->id]) }}">@csrf @method('PUT')<label class="ex-field">Status<select name="status">@foreach(['open','reviewing','resolved','dismissed'] as $status)<option value="{{ $status }}" @selected($status===$item->status)>{{ ucfirst($status) }}</option>@endforeach</select></label><button class="g-btn g-btn-primary">Update report</button></form>@else<p>Account #{{ $item->user_id }} · {{ $item->auditable_type }} #{{ $item->auditable_id }} · {{ $item->created_at }}</p><p class="ex-note">Immutable action history. This view does not expose API keys or social access tokens.</p>@endif
-@if(in_array($kind,['banners','settings','festivals']))<details><summary>Edit</summary>@include('extensions.admin-form',['item'=>$item])</details><form method="POST" action="{{ route('extensions.tools.destroy',[$kind,$item->id]) }}" onsubmit="return confirm('Delete this item?')">@csrf @method('DELETE')<button class="g-btn g-btn-secondary">Delete</button></form>@endif</section>@endforeach {{ $rows->links() }}</div></x-layouts::app>
+<x-layouts::app :title="$catalog[$kind][0]">
+    @include('extensions.style')
+    <div class="g-page">
+        <div class="g-page-heading">
+            <div>
+                <p class="g-kicker">Platform administration</p>
+                <h1>{{ $catalog[$kind][0] }}</h1>
+            </div>
+        </div>
+        <div class="ex-row">
+            @foreach ($catalog as $key => [$label, $class, $permission])
+                @if (auth()->user()->hasRole('super_admin', 'web') || auth()->user()->can($permission))
+                    <a class="ex-tab {{ $key === $kind ? 'active' : '' }}"
+                        href="{{ route('extensions.admin', $key) }}">{{ $label }}</a>
+                @endif
+            @endforeach
+        </div>
+        @if (session('success'))
+            <div class="g-alert g-tone-green mt-4">{{ session('success') }}</div>
+            @endif @if ($errors->any())
+                <div class="g-alert g-tone-red mt-4">
+                    @foreach ($errors->all() as $e)
+                        <p>{{ $e }}</p>
+                    @endforeach
+                </div>
+            @endif
+            @if (in_array($kind, ['banners', 'settings', 'festivals']))
+                <details class="ex-card" open>
+                    <summary>Create {{ rtrim($catalog[$kind][0], 's') }}</summary>@include('extensions.admin-form', ['item' => null])
+                </details>
+            @endif
+            @foreach ($rows as $item)
+                <section class="ex-card">
+                    <div class="ex-row">
+                        <h2>#{{ $item->id }} ·
+                            {{ $item->name ?? ($item->key_name ?? ($item->placement ?? ($item->action ?? $item->reportable_type))) }}
+                        </h2>
+                        @if ($item->status)
+                            <span class="ex-status">{{ $item->status }}</span>
+                        @endif
+                    </div>
+                    @if ($kind === 'banners')
+                        <img class="ex-thumb" src="{{ Storage::disk('public')->url($item->media) }}" alt="Banner">
+                        <p>{{ $item->cta_text }}</p>
+                    @elseif($kind === 'settings')
+                        <p>{{ $item->group_name }} / {{ $item->key_name }}: {{ $item->value }}</p>
+                    @elseif($kind === 'festivals')
+                        <p>{{ $item->festival_date?->format('d M Y') }}</p>
+                        <p>{{ $item->default_caption }}</p>
+                    @elseif($kind === 'reports')
+                        <p>Reported {{ $item->reportable_type }} #{{ $item->reportable_id }} by account
+                            #{{ $item->user_id }}</p>
+                        <p class="ex-output">{{ $item->reason }}</p>
+                        <form method="POST" action="{{ route('extensions.tools.update', [$kind, $item->id]) }}">@csrf
+                            @method('PUT')<label class="ex-field">Status<select name="status">
+                                    @foreach (['open', 'reviewing', 'resolved', 'dismissed'] as $status)
+                                        <option value="{{ $status }}" @selected($status === $item->status)>
+                                            {{ ucfirst($status) }}</option>
+                                    @endforeach
+                                </select>
+                        </label><button class="g-btn g-btn-primary">Update report</button></form>@else<p>Account
+                            #{{ $item->user_id }} · {{ $item->auditable_type }} #{{ $item->auditable_id }} ·
+                            {{ $item->created_at }}</p>
+                        <p class="ex-note">Immutable action history. This view does not expose API keys or social access
+                            tokens.</p>
+                    @endif
+                    @if (in_array($kind, ['banners', 'settings', 'festivals']))
+                        <details>
+                            <summary>Edit</summary>@include('extensions.admin-form', ['item' => $item])
+                        </details>
+                        <form method="POST" action="{{ route('extensions.tools.destroy', [$kind, $item->id]) }}"
+                            onsubmit="return confirm('Delete this item?')">@csrf @method('DELETE')<button
+                                class="g-btn g-btn-secondary">Delete</button></form>
+                    @endif
+                </section>
+            @endforeach {{ $rows->links() }}
+    </div>
+</x-layouts::app>
