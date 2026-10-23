@@ -1,0 +1,40 @@
+{
+  "source": "Growya_Updated_Project(2).zip",
+  "date": "2026-10-23",
+  "modified": [
+    "app/Http/Controllers/Extensions/QuoteController.php",
+    "app/Http/Controllers/ProductAttributeController.php",
+    "app/Http/Controllers/ProductController.php",
+    "app/Http/Controllers/ProductVariantAttributeController.php",
+    "app/Http/Controllers/ProductVariantController.php",
+    "resources/views/checkout/cart.blade.php",
+    "resources/views/checkout/checkout.blade.php",
+    "resources/views/checkout/my-orders.blade.php",
+    "resources/views/checkout/order.blade.php",
+    "resources/views/products/attributes.blade.php",
+    "resources/views/products/form.blade.php",
+    "resources/views/products/gallery.blade.php",
+    "resources/views/products/inventory/index.blade.php",
+    "resources/views/products/show.blade.php",
+    "resources/views/products/tags.blade.php",
+    "resources/views/products/variants/attributes.blade.php",
+    "resources/views/products/variants/index.blade.php"
+  ],
+  "added": [
+    "app/Services/ProductOptionService.php",
+    "docs/PRODUCT_CHECKOUT_CHANGED_FILES.json",
+    "docs/PRODUCT_CHECKOUT_UPDATE_HINDI.md",
+    "docs/PRODUCT_CHECKOUT_VALIDATION.json",
+    "resources/views/checkout/customer-layout.blade.php",
+    "resources/views/checkout/public-style.blade.php",
+    "resources/views/checkout/script.blade.php",
+    "resources/views/products/partials/header.blade.php",
+    "resources/views/products/partials/options.blade.php",
+    "resources/views/products/partials/script.blade.php",
+    "resources/views/products/partials/style.blade.php",
+    "resources/views/products/variants/form.blade.php",
+    "tests/Feature/ProductWorkspaceTest.php"
+  ],
+  "migrations_required": false,
+  "build_required": false
+}

@@ -27,6 +27,7 @@ class QuoteController extends ExtensionController
             $cart = Cart::where('business_id', $business->id)->where('user_id', $r->user()->id)->where('status', 'active')->lockForUpdate()->first();
             abort_unless($cart, 422, 'Cart is empty.');
             $subtotal = 0;
+            $regularSubtotal = 0;
             $items = $cart->cart_items()->get();
             abort_if($items->isEmpty(), 422, 'Cart is empty.');
             foreach ($items as $item) {
@@ -35,15 +36,25 @@ class QuoteController extends ExtensionController
                     throw ValidationException::withMessages(['cart' => 'A product is unavailable.']);
                 }$variant = $item->variant_id ? ProductVariant::where('product_id', $p->id)->where('status', 'active')->find($item->variant_id) : null;
                 abort_if($item->variant_id && ! $variant, 422, 'Variant unavailable.');
+                if (! $variant && $p->variants()->exists()) {
+                    throw ValidationException::withMessages(['cart' => 'Please choose a variant for '.$p->name]);
+                }
+                if ((int) $item->quantity < 1 || (int) $item->quantity > 100) {
+                    throw ValidationException::withMessages(['cart' => 'Invalid cart quantity.']);
+                }
                 $stock = $variant ?: $p;
                 abort_if($stock->stock_quantity < $item->quantity, 422, 'Insufficient stock.');
                 $price = $variant ? ($variant->offer_price ?? $variant->price) : ($p->offer_price ?? $p->price);
                 $subtotal += RazorpayService::paise((string) $price) * (int) $item->quantity;
+                $regularSubtotal += RazorpayService::paise((string) ($variant ? $variant->price : $p->price)) * (int) $item->quantity;
             }
             [, $discount] = app(GrowyaCouponService::class)->prepare($business, $r->user()->id, $d['coupon_code'] ?? null, $subtotal);
             $q = $commerce->quote($business, $subtotal, $discount, $state);
             $q['subtotal_paise'] = $subtotal;
             $q['discount_paise'] = $discount;
+            $q['regular_subtotal_paise'] = $regularSubtotal;
+            $q['product_savings_paise'] = max(0, $regularSubtotal - $subtotal);
+            $q['coupon_code'] = strtoupper(trim((string) ($d['coupon_code'] ?? '')));
 
             return $q;
         }, 3);

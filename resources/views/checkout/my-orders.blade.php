@@ -1,5 +1,8 @@
-<x-layouts::app title="My orders">
-    <div id="main-content" class="g-page">
+@extends('checkout.customer-layout')
+@section('content')
+@include('checkout.public-style')
+<div class="g-container checkout-public">
+    <div data-checkout-content class="g-page">
         <div class="g-page-heading">
             <div>
                 <p class="g-kicker">Your purchases</p>
@@ -60,4 +63,5 @@
 
         {{ $orders->links() }}
     </div>
-</x-layouts::app>
+</div>
+@endsection

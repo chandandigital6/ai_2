@@ -1,7 +1,9 @@
 
-<x-layouts::app :title="'Product Gallery - '.$product->name">
+<x-layouts::app :title="'Product Photos - '.$product->name" :business="$business">
 
-<div class="mx-auto max-w-7xl space-y-6 p-4 md:p-6">
+<div class="pc-workspace">
+@include('products.partials.header',['heading'=>'Product photos'])
+<div class="pc-alert">Main photo is the first image customers see. Gallery photos show extra angles. Mark an uploaded photo as featured to use it as the main photo.</div>
 
     @php
         $canEdit = app(
@@ -14,40 +16,11 @@
     @endphp
 
     {{-- Header --}}
-    <div class="flex flex-wrap items-center justify-between gap-4">
-        <div>
-            <h1 class="text-2xl font-bold">
-                Product Image Gallery
-            </h1>
+    
 
-            <p class="mt-1 text-sm text-zinc-500">
-                {{ $business->name }} / {{ $product->name }}
-            </p>
-        </div>
+    
 
-        <a
-            href="{{ route('businesses.products.show', [$business, $product]) }}"
-            class="rounded-xl border border-zinc-300 px-4 py-2 text-sm dark:border-zinc-700"
-        >
-            Back to Product
-        </a>
-    </div>
-
-    @if(session('success'))
-        <div class="rounded-xl bg-green-50 p-4 text-sm text-green-700 dark:bg-green-950 dark:text-green-200">
-            {{ session('success') }}
-        </div>
-    @endif
-
-    @if($errors->any())
-        <div class="rounded-xl bg-red-50 p-4 text-sm text-red-700 dark:bg-red-950 dark:text-red-200">
-            <ul class="list-disc pl-5">
-                @foreach($errors->all() as $error)
-                    <li>{{ $error }}</li>
-                @endforeach
-            </ul>
-        </div>
-    @endif
+    
 
     {{-- Multiple Image Upload --}}
     @if($canEdit)
@@ -272,4 +245,5 @@
 })();
 </script>
 
+@include('products.partials.script')
 </x-layouts::app>

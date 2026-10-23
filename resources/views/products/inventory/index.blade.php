@@ -1,5 +1,5 @@
 
-<x-layouts::app :title="'Inventory - '.$product->name">
+<x-layouts::app :title="'Stock - '.$product->name" :business="$business">
 
 @php
     $canEdit = app(
@@ -7,47 +7,20 @@
     )->can(
         auth()->user(),
         $business,
-        'products.update'
+        'inventory.manage'
     );
 @endphp
 
-<div class="mx-auto max-w-7xl space-y-6 p-4 md:p-6">
+<div class="pc-workspace">
+@include('products.partials.header',['heading'=>'Stock management'])
+<div class="pc-alert">Main-product stock and variant stock are separate. Choose the exact target below. Add = increase, Remove = decrease, Set quantity = replace the current quantity.</div>
 
     {{-- Header --}}
-    <div class="flex flex-wrap items-center justify-between gap-4">
-        <div>
-            <h1 class="text-2xl font-bold">
-                Product Inventory
-            </h1>
+    
 
-            <p class="mt-1 text-sm text-zinc-500">
-                {{ $business->name }} / {{ $product->name }}
-            </p>
-        </div>
+    
 
-        <a
-            href="{{ route('businesses.products.show', [$business, $product]) }}"
-            class="rounded-xl border border-zinc-300 px-4 py-2 text-sm dark:border-zinc-700"
-        >
-            Back to Product
-        </a>
-    </div>
-
-    @if(session('success'))
-        <div class="rounded-xl bg-green-50 p-4 text-sm text-green-700 dark:bg-green-950 dark:text-green-200">
-            {{ session('success') }}
-        </div>
-    @endif
-
-    @if($errors->any())
-        <div class="rounded-xl bg-red-50 p-4 text-sm text-red-700 dark:bg-red-950 dark:text-red-200">
-            <ul class="list-disc pl-5">
-                @foreach($errors->all() as $error)
-                    <li>{{ $error }}</li>
-                @endforeach
-            </ul>
-        </div>
-    @endif
+    
 
     {{-- Main Product Stock --}}
     <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -237,12 +210,12 @@
                     >
                         <option value="stock_in"
                             @selected(old('movement_type') === 'stock_in')>
-                            Stock In (+)
+                            Add stock (+)
                         </option>
 
                         <option value="stock_out"
                             @selected(old('movement_type') === 'stock_out')>
-                            Stock Out (-)
+                            Remove stock (-)
                         </option>
 
                         <option value="adjustment"
@@ -454,4 +427,5 @@
 })();
 </script>
 
+@include('products.partials.script')
 </x-layouts::app>

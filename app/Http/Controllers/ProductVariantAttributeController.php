@@ -3,14 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Models\Attribute;
-use App\Models\AttributeValue;
 use App\Models\Business;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Services\BusinessAccessService;
+use App\Services\ProductOptionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\ValidationException;
 
 class ProductVariantAttributeController extends Controller
 {
@@ -60,7 +59,7 @@ class ProductVariantAttributeController extends Controller
                     $query->whereIn('id', $allowedIds)
                         ->orderBy('sort_order')
                         ->orderBy('id');
-                }
+                },
             ])
             ->orderBy('name')
             ->get();
@@ -120,64 +119,10 @@ class ProductVariantAttributeController extends Controller
             ],
         ]);
 
-        $submitted = collect($data['attributes'] ?? [])
-            ->filter(fn ($id) => $id !== null && $id !== '');
-
-        $allowed = $product->attributeValues()
-            ->get([
-                'attribute_values.id',
-                'attribute_values.attribute_id'
-            ])
-            ->keyBy('id');
-
-        $selectedIds = [];
-
-        foreach ($submitted as $attributeId => $valueId) {
-            $value = $allowed->get((int) $valueId);
-
-            if (
-                !$value
-                || (int) $value->attribute_id !== (int) $attributeId
-            ) {
-                throw ValidationException::withMessages([
-                    'attributes' =>
-                        'Selected attribute value does not belong to this product or attribute.',
-                ]);
-            }
-
-            $selectedIds[] = (int) $valueId;
-        }
-
-        sort($selectedIds);
-
-        // Prevent identical attribute combinations in one product.
-        // Empty mappings are allowed for legacy/default variants.
-        if (count($selectedIds) > 0) {
-            $duplicate = $product->variants()
-                ->where('id', '!=', $variant->id)
-                ->with('attributeValues:id')
-                ->get()
-                ->contains(function ($other) use ($selectedIds) {
-                    $otherIds = $other->attributeValues
-                        ->pluck('id')
-                        ->map(fn ($id) => (int) $id)
-                        ->sort()
-                        ->values()
-                        ->all();
-
-                    return $otherIds === $selectedIds;
-                });
-
-            if ($duplicate) {
-                throw ValidationException::withMessages([
-                    'attributes' =>
-                        'Another variant already has this attribute combination.',
-                ]);
-            }
-        }
-
-        DB::transaction(function () use ($variant, $selectedIds) {
-            $variant->attributeValues()->sync($selectedIds);
+        DB::transaction(function () use ($product, $variant, $data) {
+            $locked = Product::whereKey($product->id)->lockForUpdate()->firstOrFail();
+            $ids = app(ProductOptionService::class)->variantValues($locked, $data['attributes'] ?? [], $variant);
+            $variant->attributeValues()->sync($ids);
         });
 
         return redirect()

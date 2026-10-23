@@ -4,8 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\Business;
 use App\Models\Product;
+use App\Models\ProductStockMovement;
 use App\Models\ProductVariant;
 use App\Services\BusinessAccessService;
+use App\Services\ProductOptionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -58,14 +60,16 @@ class ProductVariantController extends Controller
             'products.view'
         );
 
-      $variants = $product->variants()
-    ->with('attributeValues.attribute')
-    ->latest('id')
-    ->paginate(20);
+        $variants = $product->variants()
+            ->with('attributeValues.attribute')
+            ->latest('id')
+            ->paginate(20);
+
+        $attributes = app(ProductOptionService::class)->forProduct($product);
 
         return view(
             'products.variants.index',
-            compact('business', 'product', 'variants')
+            compact('business', 'product', 'variants', 'attributes')
         );
     }
 
@@ -82,6 +86,8 @@ class ProductVariantController extends Controller
 
         $data = $this->validated($request, $product);
 
+        $mapping = $request->has('attributes') ? ($data['attributes'] ?? []) : null;
+        unset($data['attributes']);
         $image = $request->file('image');
         unset($data['image']);
 
@@ -94,7 +100,7 @@ class ProductVariantController extends Controller
                     'public'
                 );
 
-                if (!$path) {
+                if (! $path) {
                     throw new \RuntimeException(
                         'Variant image upload failed.'
                     );
@@ -103,7 +109,14 @@ class ProductVariantController extends Controller
                 $data['image'] = $path;
             }
 
-            $product->variants()->create($data);
+            DB::transaction(function () use ($product, $data, $mapping) {
+                $locked = Product::whereKey($product->id)->lockForUpdate()->firstOrFail();
+                $ids = $mapping === null ? null : app(ProductOptionService::class)->variantValues($locked, $mapping);
+                $variant = $locked->variants()->create($data);
+                if ($ids !== null) {
+                    $variant->attributeValues()->sync($ids);
+                }
+            });
         } catch (\Throwable $e) {
             if ($path) {
                 Storage::disk('public')->delete($path);
@@ -115,7 +128,7 @@ class ProductVariantController extends Controller
         return redirect()
             ->route('businesses.products.variants.index', [
                 $business,
-                $product
+                $product,
             ])
             ->with('success', 'Variant added successfully.');
     }
@@ -140,6 +153,8 @@ class ProductVariantController extends Controller
             $variant
         );
 
+        $mapping = $request->has('attributes') ? ($data['attributes'] ?? []) : null;
+        unset($data['attributes']);
         $image = $request->file('image');
         unset($data['image']);
 
@@ -153,7 +168,7 @@ class ProductVariantController extends Controller
                     'public'
                 );
 
-                if (!$newImage) {
+                if (! $newImage) {
                     throw new \RuntimeException(
                         'Variant image upload failed.'
                     );
@@ -162,7 +177,20 @@ class ProductVariantController extends Controller
                 $data['image'] = $newImage;
             }
 
-            $variant->update($data);
+            DB::transaction(function () use ($product, $variant, $data, $mapping, $business, $request) {
+                $lockedProduct = Product::whereKey($product->id)->lockForUpdate()->firstOrFail();
+                $lockedVariant = ProductVariant::whereKey($variant->id)->lockForUpdate()->firstOrFail();
+                $ids = $mapping === null ? null : app(ProductOptionService::class)->variantValues($lockedProduct, $mapping, $lockedVariant);
+                $before = (int) $lockedVariant->stock_quantity;
+                if (array_key_exists('stock_quantity', $data) && (int) $data['stock_quantity'] !== $before) {
+                    abort_unless($this->access->can($request->user(), $business, 'inventory.manage'), 403, 'Inventory permission is required to change existing stock.');
+                    ProductStockMovement::create(['business_id' => $business->id, 'product_id' => $product->id, 'product_variant_id' => $variant->id, 'user_id' => $request->user()->id, 'movement_type' => 'adjustment', 'quantity_change' => (int) $data['stock_quantity'] - $before, 'quantity_before' => $before, 'quantity_after' => (int) $data['stock_quantity'], 'reason' => 'Variant stock adjustment']);
+                }
+                $lockedVariant->update($data);
+                if ($ids !== null) {
+                    $lockedVariant->attributeValues()->sync($ids);
+                }
+            });
         } catch (\Throwable $e) {
             if ($newImage) {
                 Storage::disk('public')->delete($newImage);
@@ -178,7 +206,7 @@ class ProductVariantController extends Controller
         return redirect()
             ->route('businesses.products.variants.index', [
                 $business,
-                $product
+                $product,
             ])
             ->with('success', 'Variant updated successfully.');
     }
@@ -204,7 +232,6 @@ class ProductVariantController extends Controller
         //     'Variant is used in orders or carts and cannot be deleted.'
         // );
 
-
         if (
             $variant->order_items()->exists()
             || $variant->cart_items()->exists()
@@ -227,62 +254,62 @@ class ProductVariantController extends Controller
         return redirect()
             ->route('businesses.products.variants.index', [
                 $business,
-                $product
+                $product,
             ])
             ->with('success', 'Variant deleted successfully.');
     }
 
-
-
-
     private function validated(
-    Request $request,
-    Product $product,
-    ?ProductVariant $variant = null
-): array {
-    return $request->validate([
-        'name' => [
-            'required',
-            'string',
-            'max:255'
-        ],
-        'sku' => [
-            'nullable',
-            'string',
-            'max:255',
-            Rule::unique('product_variants', 'sku')
-                ->where(function ($query) use ($product) {
-                    $query->where('product_id', $product->id);
-                })
-                ->ignore($variant?->id),
-        ],
-        'price' => [
+        Request $request,
+        Product $product,
+        ?ProductVariant $variant = null
+    ): array {
+        return $request->validate([
+            'attributes' => ['sometimes', 'array', 'max:100'],
+            'attributes.*' => ['nullable', 'integer', 'distinct'],
+            'name' => [
+                'required',
+                'string',
+                'max:255',
+            ],
+            'sku' => [
+                'nullable',
+                'string',
+                'max:255',
+                Rule::unique('product_variants', 'sku')
+                    ->where(function ($query) use ($product) {
+                        $query->where('product_id', $product->id);
+                    })
+                    ->ignore($variant?->id),
+            ],
+            'price' => [
             'required',
             'numeric',
             'min:0',
             'max:999999999999.99',
         ],
-        'offer_price' => [
+            'offer_price' => [
             'nullable',
             'numeric',
             'min:0',
             'lte:price',
         ],
-        'stock_quantity' => [
-            'required',
+            'stock_quantity' => [
+            $variant ? 'sometimes' : 'required',
             'integer',
             'min:0',
+            'max:2147483647',
         ],
-        'status' => [
+            'status' => [
             'required',
             Rule::in(['active', 'inactive']),
         ],
-        'image' => [
+            'image' => [
             'nullable',
             'image',
             'mimes:jpg,jpeg,png,webp',
             'max:3072',
         ],
-    ]);
-}
+        ]);
+    }
 }

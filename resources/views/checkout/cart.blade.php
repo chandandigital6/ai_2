@@ -36,8 +36,11 @@
     $hasIssue = $lines->contains(fn ($l) => $l->unavailable || $l->overStock);
 @endphp
 
-<x-layouts::app title="Shopping Cart">
-    <div id="main-content" class="mx-auto max-w-6xl space-y-6 p-6">
+@extends('public.businesses.layout')
+@section('content')
+@include('checkout.public-style')
+<div class="g-container checkout-public">
+    <div data-checkout-content class="mx-auto max-w-6xl space-y-6 p-6">
         <div class="flex flex-wrap items-end justify-between gap-3">
             <div>
                 <h1 class="text-3xl font-bold">Your Cart</h1>
@@ -168,4 +171,5 @@
             </div>
         @endif
     </div>
-</x-layouts::app>
+</div>
+@endsection

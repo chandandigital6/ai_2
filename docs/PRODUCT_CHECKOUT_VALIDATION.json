@@ -1,0 +1,224 @@
+{
+  "date": "2026-10-23",
+  "full_suite": {
+    "result": "passed",
+    "tests": 241,
+    "assertions": 845,
+    "duration_ms": 56095
+  },
+  "product_checkout_feature_checks": {
+    "result": "passed",
+    "cases": 15,
+    "assertions": 73,
+    "duration_ms": 5740
+  },
+  "blade_compilation": "passed",
+  "javascript_syntax": "passed",
+  "browser": {
+    "result": "passed",
+    "pages": 8,
+    "widths_px": [
+      1440,
+      768,
+      390,
+      320
+    ],
+    "cases": [
+      {
+        "name": "form",
+        "width": 1440,
+        "overflow": false,
+        "jsErrors": 0
+      },
+      {
+        "name": "form",
+        "width": 768,
+        "overflow": false,
+        "jsErrors": 0
+      },
+      {
+        "name": "form",
+        "width": 390,
+        "overflow": false,
+        "jsErrors": 0
+      },
+      {
+        "name": "form",
+        "width": 320,
+        "overflow": false,
+        "jsErrors": 0
+      },
+      {
+        "name": "overview",
+        "width": 1440,
+        "overflow": false,
+        "jsErrors": 0
+      },
+      {
+        "name": "overview",
+        "width": 768,
+        "overflow": false,
+        "jsErrors": 0
+      },
+      {
+        "name": "overview",
+        "width": 390,
+        "overflow": false,
+        "jsErrors": 0
+      },
+      {
+        "name": "overview",
+        "width": 320,
+        "overflow": false,
+        "jsErrors": 0
+      },
+      {
+        "name": "attributes",
+        "width": 1440,
+        "overflow": false,
+        "jsErrors": 0
+      },
+      {
+        "name": "attributes",
+        "width": 768,
+        "overflow": false,
+        "jsErrors": 0
+      },
+      {
+        "name": "attributes",
+        "width": 390,
+        "overflow": false,
+        "jsErrors": 0
+      },
+      {
+        "name": "attributes",
+        "width": 320,
+        "overflow": false,
+        "jsErrors": 0
+      },
+      {
+        "name": "variants",
+        "width": 1440,
+        "overflow": false,
+        "jsErrors": 0
+      },
+      {
+        "name": "variants",
+        "width": 768,
+        "overflow": false,
+        "jsErrors": 0
+      },
+      {
+        "name": "variants",
+        "width": 390,
+        "overflow": false,
+        "jsErrors": 0
+      },
+      {
+        "name": "variants",
+        "width": 320,
+        "overflow": false,
+        "jsErrors": 0
+      },
+      {
+        "name": "gallery",
+        "width": 1440,
+        "overflow": false,
+        "jsErrors": 0
+      },
+      {
+        "name": "gallery",
+        "width": 768,
+        "overflow": false,
+        "jsErrors": 0
+      },
+      {
+        "name": "gallery",
+        "width": 390,
+        "overflow": false,
+        "jsErrors": 0
+      },
+      {
+        "name": "gallery",
+        "width": 320,
+        "overflow": false,
+        "jsErrors": 0
+      },
+      {
+        "name": "tags",
+        "width": 1440,
+        "overflow": false,
+        "jsErrors": 0
+      },
+      {
+        "name": "tags",
+        "width": 768,
+        "overflow": false,
+        "jsErrors": 0
+      },
+      {
+        "name": "tags",
+        "width": 390,
+        "overflow": false,
+        "jsErrors": 0
+      },
+      {
+        "name": "tags",
+        "width": 320,
+        "overflow": false,
+        "jsErrors": 0
+      },
+      {
+        "name": "inventory",
+        "width": 1440,
+        "overflow": false,
+        "jsErrors": 0
+      },
+      {
+        "name": "inventory",
+        "width": 768,
+        "overflow": false,
+        "jsErrors": 0
+      },
+      {
+        "name": "inventory",
+        "width": 390,
+        "overflow": false,
+        "jsErrors": 0
+      },
+      {
+        "name": "inventory",
+        "width": 320,
+        "overflow": false,
+        "jsErrors": 0
+      },
+      {
+        "name": "checkout",
+        "width": 1440,
+        "overflow": false,
+        "jsErrors": 0
+      },
+      {
+        "name": "checkout",
+        "width": 768,
+        "overflow": false,
+        "jsErrors": 0
+      },
+      {
+        "name": "checkout",
+        "width": 390,
+        "overflow": false,
+        "jsErrors": 0
+      },
+      {
+        "name": "checkout",
+        "width": 320,
+        "overflow": false,
+        "jsErrors": 0
+      }
+    ],
+    "method": "Locally rendered Blade HTML from test database with original CSS/assets and Chromium. Quote interactions mocked in browser; quote and order totals also exercised against real Laravel endpoints in feature tests."
+  },
+  "live_deployment": false,
+  "live_payment_transaction": false
+}

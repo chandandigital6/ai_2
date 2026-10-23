@@ -1,3 +1,4 @@
+@php $business = $order->business; @endphp
 @php
     $statusBadge = [
         'pending' => 'bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300',
@@ -32,8 +33,11 @@
     $outlineBtn = 'inline-flex items-center justify-center rounded-xl border border-emerald-700 px-5 py-3 font-semibold text-emerald-700 transition hover:bg-emerald-50 dark:hover:bg-emerald-950';
 @endphp
 
-<x-layouts::app title="Order Details">
-    <div id="main-content" class="mx-auto max-w-5xl space-y-6 p-4 md:p-6">
+@extends('public.businesses.layout')
+@section('content')
+@include('checkout.public-style')
+<div class="g-container checkout-public">
+    <div data-checkout-content class="mx-auto max-w-5xl space-y-6 p-4 md:p-6">
         <a href="{{ route('growya.orders.mine') }}" wire:navigate
             class="text-sm font-semibold text-emerald-700 underline dark:text-emerald-400">← My Orders</a>
 
@@ -182,4 +186,5 @@
 <section class="mx-auto max-w-5xl p-6"><button type="button" id="pay-online" class="g-btn g-btn-primary">Pay ₹{{ number_format((float)$order->total_amount,2) }} online</button><p id="payment-message" role="status"></p></section>
 <script src="https://checkout.razorpay.com/v1/checkout.js"></script><script>document.getElementById('pay-online').onclick=async function(){const btn=this,out=document.getElementById('payment-message');btn.disabled=true;const headers={'Content-Type':'application/json','Accept':'application/json','X-CSRF-TOKEN':@json(csrf_token())};try{const res=await fetch(@json(route('extensions.gateway.create',$order)),{method:'POST',headers,body:JSON.stringify({request_key:'web-order-{{ $order->id }}'})});const body=await res.json();if(!res.ok)throw Error(body.message||'Unable to create payment');const d=body.data;if(!d.provider_order_id)throw Error('Payment creation needs reconciliation. Please contact support.');const checkout=new Razorpay({key:d.key_id,order_id:d.provider_order_id,amount:d.amount_paise,currency:d.currency,name:@json($order->business?->name??'Growya'),handler:async response=>{try{const verified=await fetch(@json(route('extensions.gateway.verify',$order)),{method:'POST',headers,body:JSON.stringify(response)});const result=await verified.json();if(!verified.ok||!result.data.paid)throw Error(result.message||'Payment needs review. Please contact support.');location.reload();}catch(err){out.textContent=err.message}},modal:{ondismiss:()=>{btn.disabled=false}}});checkout.on('payment.failed',()=>{out.textContent='Payment did not complete. You can retry the same payment order.';btn.disabled=false});checkout.open();}catch(err){out.textContent=err.message;btn.disabled=false}};</script>
 @endif
-</x-layouts::app>
+</div>
+@endsection

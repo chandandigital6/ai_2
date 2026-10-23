@@ -1,5 +1,5 @@
 
-<x-layouts::app :title="'Product Tags - '.$product->name">
+<x-layouts::app :title="'Search Tags - '.$product->name" :business="$business">
 
 @php
     $canEdit = app(
@@ -11,39 +11,16 @@
     );
 @endphp
 
-<div class="mx-auto max-w-5xl space-y-6 p-4 md:p-6">
+<div class="pc-workspace">
+@include('products.partials.header',['heading'=>'Search tags'])
+<div class="pc-alert">Tags are search labels, such as Bridal, Gift or Cotton. They do not create variants, change price or affect stock.</div>
 
     {{-- Header --}}
-    <div class="flex flex-wrap items-center justify-between gap-4">
-        <div>
-            <h1 class="text-2xl font-bold">
-                Manage Product Tags
-            </h1>
+    
 
-            <p class="mt-1 text-sm text-zinc-500">
-                {{ $business->name }} / {{ $product->name }}
-            </p>
-        </div>
+    
 
-        <a
-            href="{{ route('businesses.products.show', [$business, $product]) }}"
-            class="rounded-xl border border-zinc-300 px-4 py-2 text-sm dark:border-zinc-700"
-        >
-            Back to Product
-        </a>
-    </div>
-
-    @if(session('success'))
-        <div class="rounded-xl bg-green-50 p-4 text-sm text-green-700 dark:bg-green-950 dark:text-green-200">
-            {{ session('success') }}
-        </div>
-    @endif
-
-    @if($errors->any())
-        <div class="rounded-xl bg-red-50 p-4 text-sm text-red-700 dark:bg-red-950 dark:text-red-200">
-            {{ $errors->first() }}
-        </div>
-    @endif
+    
 
     <form
         method="POST"
@@ -159,4 +136,5 @@
 })();
 </script>
 
+@include('products.partials.script')
 </x-layouts::app>

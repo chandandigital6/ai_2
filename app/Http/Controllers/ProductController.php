@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Attribute;
 use App\Models\Business;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\ProductImage;
 use App\Services\BusinessAccessService;
 use App\Services\GrowyaPlanLimitService;
+use App\Services\ProductOptionService;
 use App\Services\ProductQrCodeService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -98,6 +100,8 @@ class ProductController extends Controller
             'business' => $business,
             'product' => new Product,
             'categories' => $this->categories($business),
+            'attributes' => app(ProductOptionService::class)->catalog($business),
+            'selectedValues' => [],
         ]);
     }
 
@@ -107,6 +111,8 @@ class ProductController extends Controller
 
         $data = $this->validated($request, $business);
 
+        $attributeValues = ($request->has('attribute_values') || $request->boolean('attribute_values_present')) ? ($data['attribute_values'] ?? []) : null;
+        unset($data['attribute_values'], $data['attribute_values_present']);
         $image = $request->file('featured_image');
 
         unset($data['featured_image']);
@@ -129,7 +135,8 @@ class ProductController extends Controller
 
             $product = DB::transaction(function () use (
                 $business,
-                $data
+                $data,
+                $attributeValues
             ) {
                 Business::whereKey($business->id)->lockForUpdate()->firstOrFail();
                 app(GrowyaPlanLimitService::class)->assertCanAdd($business, 'max_products');
@@ -138,7 +145,12 @@ class ProductController extends Controller
                     $data['name']
                 );
 
-                return $business->products()->create($data);
+                $product = $business->products()->create($data);
+                if ($attributeValues !== null) {
+                    app(ProductOptionService::class)->syncProduct($product, $attributeValues);
+                }
+
+                return $product;
             });
 
             try {
@@ -155,9 +167,14 @@ class ProductController extends Controller
             throw $e;
         }
 
-        return redirect()
-            ->route('businesses.products.index', $business)
-            ->with('success', 'Product created successfully.');
+        if ($request->input('after_save') === 'options' && $this->access->can($request->user(), $business, 'products.update')) {
+            return redirect()->route('businesses.products.variants.index', [$business, $product])->with('success', 'Product saved. Now add each sellable variant below.');
+        }
+        if ($request->input('after_save') === 'overview' && $this->access->can($request->user(), $business, 'products.view')) {
+            return redirect()->route('businesses.products.show', [$business, $product])->with('success', 'Product created successfully.');
+        }
+
+        return redirect()->route('businesses.products.index', $business)->with('success', 'Product created successfully.');
     }
 
     public function show(Business $business, Product $product)
@@ -169,7 +186,7 @@ class ProductController extends Controller
             'business:id,name',
             'category:id,name',
             'images',
-            'variants',
+            'variants.attributeValues.attribute',
             'tags',
             'attributeValues.attribute',
         ]);
@@ -189,6 +206,8 @@ class ProductController extends Controller
             'business' => $business,
             'product' => $product,
             'categories' => $this->categories($business),
+            'attributes' => app(ProductOptionService::class)->catalog($business),
+            'selectedValues' => $product->exists ? $product->attributeValues()->pluck('attribute_values.id')->map(fn ($id) => (int) $id)->all() : [],
         ]);
     }
 
@@ -206,6 +225,8 @@ class ProductController extends Controller
             $product
         );
 
+        $attributeValues = ($request->has('attribute_values') || $request->boolean('attribute_values_present')) ? ($data['attribute_values'] ?? []) : null;
+        unset($data['attribute_values'], $data['attribute_values_present']);
         $image = $request->file('featured_image');
 
         // Stock edit se change nahi hota (variants se manage hota hai).
@@ -240,7 +261,13 @@ class ProductController extends Controller
                 $data['featured_image'] = $newImage;
             }
 
-            $product->update($data);
+            DB::transaction(function () use ($product, $data, $attributeValues) {
+                $locked = Product::whereKey($product->id)->lockForUpdate()->firstOrFail();
+                $locked->update($data);
+                if ($attributeValues !== null) {
+                    app(ProductOptionService::class)->syncProduct($locked, $attributeValues);
+                }
+            });
         } catch (\Throwable $e) {
             if ($newImage) {
                 Storage::disk('public')->delete($newImage);
@@ -293,6 +320,10 @@ class ProductController extends Controller
         ?Product $product = null
     ): array {
         $isCreate = $product === null;
+
+        if ($isCreate && ! $request->has('stock_status') && $request->has('stock_quantity')) {
+            $request->merge(['stock_status' => (int) $request->input('stock_quantity') > 0 ? 'in_stock' : 'out_of_stock']);
+        }
 
         // Stock rules sirf create pe.
         $stockRules = $isCreate
@@ -368,6 +399,9 @@ class ProductController extends Controller
             'meta_description' => ['nullable', 'string', 'max:1000'],
             'meta_keywords' => ['nullable', 'string', 'max:1000'],
 
+            'attribute_values_present' => ['sometimes', 'boolean'],
+            'attribute_values' => ['sometimes', 'array', 'max:500'],
+            'attribute_values.*' => ['required', 'integer', 'distinct', Rule::exists('attribute_values', 'id')->whereIn('attribute_id', Attribute::where(fn ($q) => $q->whereNull('business_id')->orWhere('business_id', $business->id))->select('id'))],
             'specifications' => ['nullable', 'array', 'max:30'],
             'specifications.*.name' => ['nullable', 'string', 'max:255'],
             'specifications.*.value' => ['nullable', 'string', 'max:1000'],

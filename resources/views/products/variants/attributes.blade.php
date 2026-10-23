@@ -1,5 +1,5 @@
 
-<x-layouts::app :title="'Variant Attributes - '.$variant->name">
+<x-layouts::app :title="'Variant Combination - '.$variant->name" :business="$business">
 
 @php
     $canEdit = app(
@@ -11,45 +11,16 @@
     );
 @endphp
 
-<div class="mx-auto max-w-5xl space-y-6 p-4 md:p-6">
+<div class="pc-workspace">
+@include('products.partials.header',['heading'=>'Variant combination'])
+<div class="pc-alert">Choose one value per relevant attribute. You can also edit these values directly on the Variants page.</div>
 
     {{-- Header --}}
-    <div class="flex flex-wrap items-center justify-between gap-4">
-        <div>
-            <h1 class="text-2xl font-bold">
-                Variant Attribute Mapping
-            </h1>
+    
 
-            <p class="mt-1 text-sm text-zinc-500">
-                {{ $business->name }} /
-                {{ $product->name }} /
-                {{ $variant->name }}
-            </p>
-        </div>
+    
 
-        <a
-            href="{{ route('businesses.products.variants.index', [$business, $product]) }}"
-            class="rounded-xl border border-zinc-300 px-4 py-2 text-sm dark:border-zinc-700"
-        >
-            Back to Variants
-        </a>
-    </div>
-
-    @if(session('success'))
-        <div class="rounded-xl bg-green-50 p-4 text-sm text-green-700 dark:bg-green-950 dark:text-green-200">
-            {{ session('success') }}
-        </div>
-    @endif
-
-    @if($errors->any())
-        <div class="rounded-xl bg-red-50 p-4 text-sm text-red-700 dark:bg-red-950 dark:text-red-200">
-            <ul class="list-disc pl-5">
-                @foreach($errors->all() as $error)
-                    <li>{{ $error }}</li>
-                @endforeach
-            </ul>
-        </div>
-    @endif
+    
 
     {{-- Variant Info --}}
     <div class="rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
@@ -212,4 +183,5 @@
 
 </div>
 
+@include('products.partials.script')
 </x-layouts::app>

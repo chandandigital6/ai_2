@@ -6,6 +6,7 @@ use App\Models\Attribute;
 use App\Models\Business;
 use App\Models\Product;
 use App\Services\BusinessAccessService;
+use App\Services\ProductOptionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -95,9 +96,8 @@ class ProductAttributeController extends Controller
         ]);
 
         DB::transaction(function () use ($product, $data) {
-            $product->attributeValues()->sync(
-                $data['values'] ?? []
-            );
+            $locked = Product::whereKey($product->id)->lockForUpdate()->firstOrFail();
+            app(ProductOptionService::class)->syncProduct($locked, $data['values'] ?? []);
         });
 
         return redirect()
