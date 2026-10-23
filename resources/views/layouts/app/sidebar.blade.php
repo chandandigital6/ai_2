@@ -433,6 +433,7 @@
         </flux:toast.group>
     @endpersist
     @fluxScripts
+<x-growya-web-push />
 </body>
 
 </html>

@@ -28,7 +28,7 @@
 @endphp
 
 <x-layouts::app title="Conversation" :business="$thread->business">
-    <div id="main-content" class="mx-auto max-w-4xl space-y-5 p-4 md:p-8">
+    <div class="mx-auto max-w-4xl space-y-5 p-4 md:p-8">
 
         {{-- Header --}}
         <div class="flex flex-wrap items-start justify-between gap-3">
@@ -79,7 +79,8 @@
                 </div>
             @endunless
 
-            <div id="chat-messages" class="min-h-52 max-h-[60vh] space-y-3 overflow-y-auto p-4" aria-live="polite">
+            <p id="chat-live-status" role="status" aria-live="polite" style="padding:10px 16px;font-size:12px;color:#687c72">{{ $onFirstPage ? 'Connecting to live messages…' : 'Older messages · Open the latest page for live updates.' }}</p>
+            <div id="chat-messages" data-poll-url="{{ route('growya.chat.poll',$thread) }}" data-thread-id="{{ $thread->id }}" data-last-id="{{ (int)($messages->max('id') ?? 0) }}" data-live="{{ $onFirstPage ? '1' : '0' }}" class="min-h-52 max-h-[60vh] space-y-3 overflow-y-auto p-4" aria-live="polite">
                 @forelse ($messages->reverse() as $message)
                     @php $mine = (int) $message->sender_id === (int) auth()->id(); @endphp
                     <div class="flex {{ $mine ? 'justify-end' : 'justify-start' }}">
@@ -98,7 +99,7 @@
                         </div>
                     </div>
                 @empty
-                    <p class="py-12 text-center text-sm text-zinc-500">Abhi koi message nahi. Pehla message bhejo.</p>
+                    <p data-empty-chat class="py-12 text-center text-sm text-zinc-500">Abhi koi message nahi. Pehla message bhejo.</p>
                 @endforelse
             </div>
 
@@ -234,90 +235,5 @@
         </details>
     </div>
 
-    <script>
-        (function() {
-            const root = document.getElementById('chat-messages');
-            if (!root) return;
-            root.scrollTop = root.scrollHeight;
-
-            // Attachment ka naam dikhao + Ctrl/Cmd+Enter se send
-            const fileInput = document.getElementById('chat-file');
-            const fileName = document.getElementById('chat-file-name');
-            if (fileInput && fileName) {
-                fileInput.addEventListener('change', function() {
-                    fileName.textContent = fileInput.files.length ? fileInput.files[0].name :
-                        'JPG, PNG, WEBP ya PDF · max 5 MB';
-                });
-            }
-            const body = document.getElementById('chat-body');
-            const form = document.getElementById('chat-form');
-            if (body && form) {
-                body.addEventListener('keydown', function(e) {
-                    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') form.requestSubmit();
-                });
-            }
-
-            // Polling sirf latest page par (purane page par lastId galat hota).
-            @if ($onFirstPage)
-                let lastId = {{ (int) ($messages->max('id') ?? 0) }};
-                const endpoint = @json(route('growya.chat.poll', $thread));
-
-                const timer = setInterval(async () => {
-                    if (!document.body.contains(root)) {
-                        clearInterval(timer);
-                        return;
-                    }
-                    // Tab hidden ho to sirf skip karo, polling band mat karo.
-                    if (document.hidden) return;
-
-                    try {
-                        const response = await fetch(endpoint + '?after=' + lastId, {
-                            headers: {
-                                'Accept': 'application/json'
-                            }
-                        });
-                        if (!response.ok) return;
-                        const json = await response.json();
-
-                        for (const m of json.messages || []) {
-                            lastId = Math.max(lastId, m.id);
-
-                            const row = document.createElement('div');
-                            row.className = 'flex ' + (m.mine ? 'justify-end' : 'justify-start');
-
-                            const bubble = document.createElement('div');
-                            bubble.className = 'max-w-[85%] rounded-2xl px-4 py-3 ' + (m.mine ?
-                                'rounded-br-sm bg-emerald-700 text-white' :
-                                'rounded-bl-sm bg-zinc-100 text-zinc-900 dark:bg-zinc-800 dark:text-white'
-                                );
-
-                            if (m.body) {
-                                const p = document.createElement('p');
-                                p.className = 'whitespace-pre-wrap break-words text-sm';
-                                p.textContent = m.body;
-                                bubble.appendChild(p);
-                            }
-                            if (m.attachment) {
-                                const a = document.createElement('a');
-                                a.href = m.attachment;
-                                a.textContent = '📎 Attachment';
-                                a.className =
-                                    'mt-1 inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold underline ' +
-                                    (m.mine ? 'bg-emerald-800' : 'bg-white dark:bg-zinc-700');
-                                bubble.appendChild(a);
-                            }
-                            const time = document.createElement('small');
-                            time.className = 'mt-1 block text-[11px] opacity-70';
-                            time.textContent = m.time;
-                            bubble.appendChild(time);
-
-                            row.appendChild(bubble);
-                            root.appendChild(row);
-                        }
-                        if ((json.messages || []).length) root.scrollTop = root.scrollHeight;
-                    } catch (e) {}
-                }, 12000);
-            @endif
-        })();
-    </script>
+    <script src="{{ asset('growya-ui/chat.js') }}?v=20261023-1" defer></script>
 </x-layouts::app>

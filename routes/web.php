@@ -263,7 +263,7 @@ Route::middleware('auth')->group(function () {
     Route::get('businesses/{business}/messages', [GrowyaChatController::class, 'inbox'])->name('growya.chat.inbox');
     Route::post('businesses/{business}/messages/start', [GrowyaChatController::class, 'start'])->middleware('throttle:15,1')->name('growya.chat.start');
     Route::get('messages/{thread}', [GrowyaChatController::class, 'show'])->name('growya.chat.show');
-    Route::get('messages/{thread}/poll', [GrowyaChatController::class, 'poll'])->middleware('throttle:12,1')->name('growya.chat.poll');
+    Route::get('messages/{thread}/poll', [GrowyaChatController::class, 'poll'])->middleware('throttle:30,1')->name('growya.chat.poll');
     Route::post('messages/{thread}', [GrowyaChatController::class, 'send'])->middleware('throttle:20,1')->name('growya.chat.send');
     Route::get('messages/{thread}/files/{message}', [GrowyaChatController::class, 'file'])->name('growya.chat.file');
 
@@ -1097,3 +1097,13 @@ Route::middleware('auth')->group(function () {
 });
 
 require __DIR__.'/extensions_web.php';
+
+// Browser push uses session authentication + CSRF; API devices remain bearer-token based.
+Route::get('firebase-messaging-sw.js', [\App\Http\Controllers\GrowyaWebPushController::class, 'worker'])->name('growya.push.worker');
+Route::middleware(['auth', 'throttle:20,1'])->group(function () {
+    Route::get('my-notifications/push/config', [\App\Http\Controllers\GrowyaWebPushController::class, 'config'])->name('growya.push.config');
+    Route::post('my-notifications/push/register', [\App\Http\Controllers\GrowyaWebPushController::class, 'store'])->name('growya.push.store');
+    Route::post('my-notifications/push/disable', [\App\Http\Controllers\GrowyaWebPushController::class, 'disable'])->name('growya.push.disable');
+    Route::post('my-notifications/push/test', [\App\Http\Controllers\GrowyaWebPushController::class, 'test'])->middleware('throttle:3,1')->name('growya.push.test');
+    Route::get('my-notifications/{recipient}/visit', [GrowyaNotificationController::class, 'open'])->name('growya.notifications.visit');
+});

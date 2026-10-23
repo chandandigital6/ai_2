@@ -105,12 +105,13 @@
                 } catch (_) {}
             }
             function desktopAlert(item) {
+                if (window.GrowyaPush?.active()) return;
                 if (!('Notification' in window) || Notification.permission !== 'granted') return;
                 try {
                     const n = new Notification(item.title || 'Growya notification', {
                         body: item.message || 'You have a new alert', tag: 'growya-' + item.id,
                     });
-                    n.onclick = function () { window.focus(); n.close(); menu.hidden = false; };
+                    n.onclick = function () { window.focus(); n.close(); window.location.assign(item.visit_url); };
                 } catch (_) {}
             }
             async function poll() {
@@ -148,6 +149,7 @@
                 }
             });
             desktopBtn.addEventListener('click', async function () {
+                if (window.GrowyaPush) { await window.GrowyaPush.enable(); return; }
                 if (!('Notification' in window)) { notice.textContent = 'Desktop alerts are not supported in this browser.'; return; }
                 if (!window.isSecureContext) { notice.textContent = 'Desktop alerts need HTTPS (localhost is allowed).'; return; }
                 try {
@@ -162,6 +164,8 @@
                 soundBtn.textContent = soundEnabled ? 'Sound: On' : 'Sound: Off';
                 if (soundEnabled) playSound(); // prime AudioContext on a real user click
             });
+            document.addEventListener('growya:push', function () { if (root.isConnected) poll(); });
+            document.addEventListener('growya:push-status', function (event) { if (root.isConnected) notice.textContent = event.detail.message; });
             document.addEventListener('visibilitychange', function () { if (!document.hidden) poll(); });
             poll();
             const timer = setInterval(function () {

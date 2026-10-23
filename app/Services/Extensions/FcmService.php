@@ -12,19 +12,29 @@ class FcmService
         return (bool) config('growya_extensions.fcm.enabled');
     }
 
-    public function send(string $token, array $notification, array $data): array
+    public function credentials(): array
     {
-        abort_unless($this->enabled(), 503, 'FCM is disabled.');
         $path = config('growya_extensions.fcm.credentials');
-        if (! $path || ! is_readable($path)) {
+        if (! $path || ! is_file($path) || ! is_readable($path)) {
             throw new \RuntimeException('FCM credentials missing.');
         }
         $credentials = json_decode(file_get_contents($path), true, 512, JSON_THROW_ON_ERROR);
+        if (! is_array($credentials) || (isset($credentials['type']) && $credentials['type'] !== 'service_account')) {
+            throw new \RuntimeException('Use a Firebase service-account JSON, not google-services.json.');
+        }
         foreach (['project_id', 'client_email', 'private_key'] as $key) {
             if (empty($credentials[$key])) {
                 throw new \RuntimeException('FCM credentials incomplete.');
             }
         }
+
+        return $credentials;
+    }
+
+    public function send(string $token, array $notification, array $data, string $platform = 'android'): array
+    {
+        abort_unless($this->enabled(), 503, 'FCM is disabled.');
+        $credentials = $this->credentials();
         $access = Cache::remember('fcm-oauth:'.hash('sha256', $credentials['client_email'].$credentials['private_key']), 3000, function () use ($credentials) {
             $b64 = fn ($s) => rtrim(strtr(base64_encode($s), '+/', '-_'), '=');
             $head = $b64(json_encode(['alg' => 'RS256', 'typ' => 'JWT']));
@@ -39,9 +49,23 @@ class FcmService
 
             return $r->json('access_token');
         });
-        $r = Http::withToken($access)->timeout(20)->post('https://fcm.googleapis.com/v1/projects/'.rawurlencode($credentials['project_id']).'/messages:send', ['message' => ['token' => $token, 'notification' => $notification, 'data' => array_map('strval', $data)]]);
-        $code = $r->json('error.details.0.errorCode') ?: $r->json('error.status');
+        $message = ['token' => $token, 'data' => array_map('strval', array_merge($data, ['title' => $notification['title'] ?? '', 'body' => $notification['body'] ?? '']))];
+        if ($platform === 'web') {
+            $message['webpush'] = ['headers' => ['Urgency' => 'high', 'TTL' => '86400']];
+        } else {
+            $message['notification'] = $notification;
+            if ($platform === 'android') {
+                $message['android'] = ['priority' => 'high', 'notification' => ['sound' => 'default']];
+            } elseif ($platform === 'ios') {
+                $message['apns'] = ['payload' => ['aps' => ['sound' => 'default']]];
+            }
+        }
+        $r = Http::withToken($access)->timeout(20)->post('https://fcm.googleapis.com/v1/projects/'.rawurlencode($credentials['project_id']).'/messages:send', ['message' => $message]);
+        $code = collect($r->json('error.details', []))->pluck('errorCode')->filter()->first() ?: $r->json('error.status');
+        if ($r->status() === 401) {
+            Cache::forget('fcm-oauth:'.hash('sha256', $credentials['client_email'].$credentials['private_key']));
+        }
 
-        return ['ok' => $r->successful(), 'id' => $r->json('name'), 'code' => $code ?: 'HTTP_'.$r->status(), 'retry' => in_array($r->status(), [429, 500, 502, 503, 504], true), 'invalid' => $code === 'UNREGISTERED'];
+        return ['ok' => $r->successful(), 'id' => $r->json('name'), 'code' => $code ?: 'HTTP_'.$r->status(), 'retry' => in_array($r->status(), [401, 429, 500, 502, 503, 504], true), 'invalid' => $code === 'UNREGISTERED'];
     }
 }

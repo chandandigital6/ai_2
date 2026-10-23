@@ -28,6 +28,7 @@ class GrowyaLiveNotificationController extends Controller
                 'message' => $item->notification?->message ?? '',
                 'created_at' => $item->created_at?->diffForHumans(),
                 'open_url' => route('growya.notifications.open', $item),
+                'visit_url' => route('growya.notifications.visit', $item),
             ])->values(),
         ])->header('Cache-Control', 'private, no-store, max-age=0');
     }

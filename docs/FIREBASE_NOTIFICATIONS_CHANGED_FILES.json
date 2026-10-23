@@ -1,0 +1,43 @@
+{
+  "source": "Growya_Product_Checkout_Updated.zip",
+  "date": "2026-10-23",
+  "modified": [
+    ".env.example",
+    ".gitignore",
+    "app/Http/Controllers/GrowyaChatController.php",
+    "app/Http/Controllers/GrowyaLiveNotificationController.php",
+    "app/Http/Controllers/GrowyaNotificationController.php",
+    "app/Jobs/Extensions/SendPush.php",
+    "app/Services/Extensions/FcmService.php",
+    "app/Services/GrowyaNotificationService.php",
+    "config/growya_extensions.php",
+    "resources/views/checkout/customer-layout.blade.php",
+    "resources/views/components/growya-live-notification-bell.blade.php",
+    "resources/views/growya-chat/show.blade.php",
+    "resources/views/layouts/app/sidebar.blade.php",
+    "resources/views/notifications/index.blade.php",
+    "resources/views/public/businesses/layout.blade.php",
+    "resources/views/public/partials/site-header.blade.php",
+    "routes/web.php"
+  ],
+  "added": [
+    "app/Console/Commands/GrowyaPushCheck.php",
+    "app/Http/Controllers/GrowyaWebPushController.php",
+    "app/Listeners/RevokeBrowserPushOnLogout.php",
+    "app/Services/Extensions/WebPushConfig.php",
+    "docs/FIREBASE_NOTIFICATIONS_CHANGED_FILES.json",
+    "docs/FIREBASE_NOTIFICATIONS_SETUP_HINDI.md",
+    "docs/FIREBASE_NOTIFICATIONS_VALIDATION.json",
+    "public/growya-ui/chat.js",
+    "public/growya-ui/push.js",
+    "resources/views/components/growya-web-push.blade.php",
+    "resources/views/notifications/push-controls.blade.php",
+    "resources/views/notifications/worker.blade.php",
+    "tests/Feature/BrowserPushTest.php"
+  ],
+  "migrations_required": false,
+  "npm_build_required": false,
+  "composer_dependency_changes": false,
+  "server_env_values_required": true,
+  "previous_product_checkout_changes": "retained"
+}

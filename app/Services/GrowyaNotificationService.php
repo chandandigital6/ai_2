@@ -19,7 +19,7 @@ class GrowyaNotificationService
         }
 
         // Never store arbitrary external URLs for redirect actions.
-        if ($url !== null && (! str_starts_with($url, '/') || str_starts_with($url, '//'))) {
+        if ($url !== null && (! str_starts_with($url, '/') || str_starts_with($url, '//') || str_contains($url, '\\') || preg_match('/[\x00-\x1F\x7F]/', $url))) {
             $url = null;
         }
 

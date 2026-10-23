@@ -44,14 +44,28 @@ class SendPush implements ShouldQueue
         }
         $device = UserDevice::find($row->device_id);
         $recipient = NotificationRecipient::with('notification', 'user')->find($row->recipient_id);
-        if (! $device || ! $recipient || ! $device->is_active || (int) $device->user_id !== (int) $recipient->user_id || $recipient->user?->status !== 'active') {
+        if (! $device || ! $recipient || ! $recipient->notification || $recipient->notification->status !== 'sent' || ! $device->is_active || (int) $device->user_id !== (int) $recipient->user_id || $recipient->user?->status !== 'active') {
             DB::table('growya_push_deliveries')->where('id', $row->id)->update(['status' => 'skipped', 'updated_at' => now()]);
 
             return;
         }
         DB::table('growya_push_deliveries')->where('id', $row->id)->increment('attempts');
         try {
-            $result = $fcm->send($device->fcm_token, ['title' => $recipient->notification->title, 'body' => $recipient->notification->message], ['recipient_id' => $recipient->id, 'delivery_id' => $row->id, 'action_url' => $recipient->notification->action_url ?? '']);
+            $action = $recipient->notification->action_url ?? '';
+            $data = ['recipient_id' => $recipient->id, 'delivery_id' => $row->id,
+                'type' => $recipient->notification->type, 'business_id' => $recipient->notification->business_id ?? '',
+                'action_url' => $action,
+                'url' => route('growya.notifications.visit', ['recipient' => $recipient->id, 'delivery' => $row->id], false)];
+            if (preg_match('~^/messages/(\d+)(?:/|$)~', $action, $match)) {
+                $data['thread_id'] = $match[1];
+            }
+            if (preg_match('~/(?:my-orders|orders)/(\d+)(?:/|$)~', $action, $match)) {
+                $data['order_id'] = $match[1];
+            }
+            if (preg_match('~/(?:product-enquiries|service-enquiries)/(\d+)(?:/|$)~', $action, $match)) {
+                $data['enquiry_id'] = $match[1];
+            }
+            $result = $fcm->send($device->fcm_token, ['title' => $recipient->notification->title, 'body' => $recipient->notification->message], $data, $device->platform);
         } catch (\Throwable $e) {
             DB::table('growya_push_deliveries')->where('id', $row->id)->update(['status' => 'retry', 'error_code' => 'TRANSPORT_OR_CONFIG', 'updated_at' => now()]);
             throw new \RuntimeException('FCM transport/configuration failure.'); // Never log provider tokens or HTTP request contents.
