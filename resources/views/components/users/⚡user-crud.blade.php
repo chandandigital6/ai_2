@@ -20,6 +20,7 @@ new class extends Component {
     public $password = '';
     public $password_confirmation = '';
     public $search = '';
+    public $accountType = '';
     public $showModal = false;
     public $viewModal = false;
     public $selectedUser = null;
@@ -33,6 +34,11 @@ new class extends Component {
             'email' => 'required|email|max:255|unique:users,email,' . $this->userId,
             'password' => $this->userId ? 'nullable|min:12|confirmed' : 'required|min:12|confirmed',
         ];
+    }
+
+    public function updatedAccountType()
+    {
+        $this->resetPage();
     }
 
     public function updatedSearch()
@@ -111,6 +117,7 @@ new class extends Component {
             'id' => $user->id,
             'name' => $user->name,
             'email' => $user->email,
+            'account_type_label' => $user->account_type_label,
         ];
 
         $this->selectedRoles = method_exists($user, 'getRoleNames')
@@ -157,6 +164,8 @@ new class extends Component {
     {
         return [
             'users' => User::query()
+                ->with('roles:id,name,guard_name')
+                ->when(in_array($this->accountType, ['personal', 'business'], true), fn ($q) => $q->where('user_type', $this->accountType === 'business' ? 'owner' : 'customer'))
                 ->when($this->search, function ($query) {
                     $query->where(function ($q) {
                         $q->where('name', 'like', '%' . $this->search . '%')
@@ -192,9 +201,17 @@ new class extends Component {
 
     <div class="rounded-2xl border bg-white p-4 shadow-sm">
         <div class="mb-4">
-            <flux:input wire:model.live="search" placeholder="Search by name or email..." />
+            <flux:input wire:model.live.debounce.400ms="search" placeholder="Search by name or email..." />
         </div>
 
+        <div class="mb-4">
+            <label for="account-type-filter" class="mb-2 block text-sm font-semibold">Account type</label>
+            <select id="account-type-filter" wire:model.live="accountType" class="w-full rounded-xl border border-slate-300 px-3 py-2 sm:w-60">
+                <option value="">All account types</option>
+                <option value="personal">Personal</option>
+                <option value="business">Business</option>
+            </select>
+        </div>
         <div class="overflow-x-auto">
             <table class="w-full text-left text-sm">
                 <thead>
@@ -202,6 +219,7 @@ new class extends Component {
                         <th class="px-4 py-3">#</th>
                         <th class="px-4 py-3">Name</th>
                         <th class="px-4 py-3">Email</th>
+                        <th class="px-4 py-3">Account type / Roles</th>
                         <th class="px-4 py-3">Created</th>
                         <th class="px-4 py-3 text-right">Action</th>
                     </tr>
@@ -222,6 +240,10 @@ new class extends Component {
                                 {{ $user->email }}
                             </td>
 
+                            <td class="px-4 py-3">
+                                {{ $user->account_type_label }}
+                                <div class="mt-1 text-xs text-slate-500">{{ $user->roles->pluck('name')->join(', ') ?: 'No role assigned' }}</div>
+                            </td>
                             <td class="px-4 py-3">
                                 {{ $user->created_at?->format('d M Y') }}
                             </td>
@@ -249,7 +271,7 @@ new class extends Component {
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="5" class="px-4 py-6 text-center text-gray-500">
+                            <td colspan="6" class="px-4 py-6 text-center text-gray-500">
                                 No users found.
                             </td>
                         </tr>
@@ -326,6 +348,7 @@ new class extends Component {
                         </h2>
                         <p class="mt-1 text-sm text-zinc-600 dark:text-zinc-300">
                             {{ $selectedUser['name'] }} — {{ $selectedUser['email'] }}
+                            <span class="mt-2 block font-semibold">Account type: {{ $selectedUser['account_type_label'] }}</span>
                         </p>
                     </div>
 

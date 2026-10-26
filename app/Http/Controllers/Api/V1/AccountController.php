@@ -23,9 +23,9 @@ class AccountController extends Controller
     public function users(Request $request)
     {
         $this->admin($request);
-        $data = $request->validate(['search' => ['nullable', 'string', 'max:100']]);
+        $data = $request->validate(['search' => ['nullable', 'string', 'max:100'], 'account_type' => ['nullable', Rule::in(['personal', 'business'])]]);
 
-        return response()->json(['data' => User::select('id', 'name', 'email', 'phone', 'user_type', 'status')->when($data['search'] ?? null, fn ($q, $term) => $q->where(fn ($q) => $q->where('name', 'like', '%'.$term.'%')->orWhere('email', 'like', '%'.$term.'%')))->latest('id')->paginate(20)]);
+        return response()->json(['data' => User::select('id', 'name', 'email', 'phone', 'user_type', 'status')->when($data['account_type'] ?? null, fn ($q, $type) => $q->where('user_type', $type === 'business' ? 'owner' : 'customer'))->when($data['search'] ?? null, fn ($q, $term) => $q->where(fn ($q) => $q->where('name', 'like', '%'.$term.'%')->orWhere('email', 'like', '%'.$term.'%')))->latest('id')->paginate(20)]);
     }
 
     public function createUser(Request $request)
@@ -71,7 +71,7 @@ class AccountController extends Controller
         }
         $user->fill($data)->save();
 
-        return response()->json(['data' => $user->only('id', 'name', 'email', 'phone', 'user_type', 'status')]);
+        return response()->json(['data' => $user->only('id', 'name', 'email', 'phone', 'user_type', 'account_type', 'status')]);
     }
 
     public function password(Request $request)

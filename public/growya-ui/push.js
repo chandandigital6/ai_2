@@ -25,11 +25,29 @@
         toast.style.background = error ? '#8f392f' : '#17573e'; toast.textContent = message; toast.hidden = false;
         clearTimeout(toastTimer); toastTimer = setTimeout(() => { toast.hidden = true; }, 6500);
     }
-    async function request(url, data) {
+    const requestCooldowns = new Map(), pendingReads = new Map();
+    function request(url, data) {
+        if (Date.now() < (requestCooldowns.get(url) || 0)) {
+            return Promise.reject(Error('Please wait before trying this notification action again.'));
+        }
+        if (data === undefined && pendingReads.has(url)) return pendingReads.get(url);
+        const promise = sendRequest(url, data);
+        if (data !== undefined) return promise;
+        const read = promise.finally(() => pendingReads.delete(url));
+        pendingReads.set(url, read);
+        return read;
+    }
+    async function sendRequest(url, data) {
         const controller = new AbortController(), timer = setTimeout(() => controller.abort(), 15000);
         try {
             const response = await fetch(url, {method: data === undefined ? 'GET' : 'POST', credentials: 'same-origin', cache: 'no-store', signal: controller.signal,
                 headers: {Accept: 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': settings.csrf}, body: data === undefined ? undefined : JSON.stringify(data)});
+            if (response.status === 429) {
+                const retry = response.headers.get('Retry-After');
+                const wait = /^\d+$/.test(retry || '') ? Number(retry) * 1000 : Math.max(0, Date.parse(retry) - Date.now()) || 60000;
+                requestCooldowns.set(url, Date.now() + Math.max(1000, wait));
+                throw Error('Too many requests. Please try again in ' + Math.ceil(wait / 1000) + ' seconds.');
+            }
             const result = await response.json().catch(() => ({}));
             if (!response.ok) throw Error(result.message || (response.status === 419 ? 'Session expired. Reload this page and try again.' : 'Unable to update notifications. Please try again.'));
             return result;

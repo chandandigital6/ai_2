@@ -14,4 +14,6 @@
         <button type="submit" class="g-btn g-btn-primary w-full" data-test="register-user-button">Create account<x-growya.icon name="arrow-right" /></button>
     </form>
     <p class="mt-6 text-center text-xs text-slate-600">Already have an account? <a href="{{ route('login') }}" class="font-semibold text-emerald-700">Log in</a></p>
+    <a href="{{ route('public.marketplace.index') }}" class="g-btn mt-5 w-full border border-slate-300 text-slate-700">Continue as guest</a>
+    <p class="mt-2 text-center text-xs text-slate-500">Browse businesses, services and products freely. Sign in to send an enquiry or buy.</p>
 </x-layouts::auth>

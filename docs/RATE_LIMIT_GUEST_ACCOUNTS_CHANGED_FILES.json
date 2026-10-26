@@ -1,0 +1,36 @@
+{
+  "modified": [
+    "bootstrap/app.php",
+    "public/growya-ui/chat.js",
+    "public/growya-ui/push.js",
+    "resources/views/components/growya-live-notification-bell.blade.php",
+    "resources/views/components/growya-web-push.blade.php",
+    "resources/views/components/users/⚡user-crud.blade.php",
+    "resources/views/growya-chat/show.blade.php",
+    "resources/views/pages/auth/login.blade.php",
+    "resources/views/pages/auth/register.blade.php",
+    "routes/api_actions.php",
+    "routes/web.php",
+    "app/Http/Controllers/Api/V1/AccountController.php",
+    "app/Http/Controllers/Api/V1/AuthController.php",
+    "app/Http/Responses/RegisterResponse.php",
+    "app/Models/User.php"
+  ],
+  "added": [
+    "app/Http/Middleware/ThrottleByRoute.php",
+    "tests/Feature/RateLimitGuestAccountsTest.php",
+    "tests/js/polling-backoff.cjs",
+    "docs/RATE_LIMIT_GUEST_ACCOUNTS_HINDI.md",
+    "docs/RATE_LIMIT_GUEST_ACCOUNTS_CHANGED_FILES.json"
+  ],
+  "full_suite": {
+    "passed": 272,
+    "assertions": 1113
+  },
+  "final_focused_suite": {
+    "passed": 77,
+    "assertions": 496
+  },
+  "javascript_polling_assertions": 10,
+  "database_migration_required": false
+}

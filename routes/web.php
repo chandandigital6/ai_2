@@ -49,6 +49,7 @@ use App\Http\Controllers\GrowyaSubscriptionBillingController;
 use App\Http\Controllers\GrowyaSubscriptionController;
 use App\Http\Controllers\GrowyaSupportTicketController;
 use App\Http\Controllers\GrowyaUserRoleController;
+use App\Http\Controllers\GrowyaWebPushController;
 use App\Http\Controllers\GrowyaWishlistController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\ProductAttributeController;
@@ -96,7 +97,7 @@ Route::get(
 Route::get(
     'my-notifications/poll',
     [GrowyaLiveNotificationController::class, 'poll']
-)->middleware(['auth', 'throttle:12,1'])
+)->middleware(['auth', 'throttle:90,1'])
     ->name('growya.notifications.poll');
 
 Route::get('my-notifications', [GrowyaNotificationController::class, 'index'])->middleware('auth')->name('growya.notifications.index');
@@ -104,8 +105,8 @@ Route::post('my-notifications/{recipient}/open', [GrowyaNotificationController::
 Route::patch('my-notifications/{recipient}/read', [GrowyaNotificationController::class, 'read'])->middleware('auth')->name('growya.notifications.read');
 Route::patch('my-notifications/read-all', [GrowyaNotificationController::class, 'readAll'])->middleware('auth')->name('growya.notifications.read-all');
 
-Route::get('products/{business}/{product}/enquiry', [ProductEnquiryController::class, 'create'])->name('public.products.enquiry.create');
-Route::post('products/{business}/{product}/enquiry', [ProductEnquiryController::class, 'store'])->middleware('throttle:5,1')->name('public.products.enquiry.store');
+Route::get('products/{business}/{product}/enquiry', [ProductEnquiryController::class, 'create'])->middleware('auth')->name('public.products.enquiry.create');
+Route::post('products/{business}/{product}/enquiry', [ProductEnquiryController::class, 'store'])->middleware(['auth', 'throttle:5,1'])->name('public.products.enquiry.store');
 
 Route::get('b/{slug}/reviews', [BusinessReviewController::class, 'publicIndex'])
     ->name('public.business.reviews.index');
@@ -263,8 +264,8 @@ Route::middleware('auth')->group(function () {
     Route::get('businesses/{business}/messages', [GrowyaChatController::class, 'inbox'])->name('growya.chat.inbox');
     Route::post('businesses/{business}/messages/start', [GrowyaChatController::class, 'start'])->middleware('throttle:15,1')->name('growya.chat.start');
     Route::get('messages/{thread}', [GrowyaChatController::class, 'show'])->name('growya.chat.show');
-    Route::get('messages/{thread}/poll', [GrowyaChatController::class, 'poll'])->middleware('throttle:30,1')->name('growya.chat.poll');
-    Route::post('messages/{thread}', [GrowyaChatController::class, 'send'])->middleware('throttle:20,1')->name('growya.chat.send');
+    Route::get('messages/{thread}/poll', [GrowyaChatController::class, 'poll'])->middleware('throttle:120,1')->name('growya.chat.poll');
+    Route::post('messages/{thread}', [GrowyaChatController::class, 'send'])->middleware('throttle:60,1')->name('growya.chat.send');
     Route::get('messages/{thread}/files/{message}', [GrowyaChatController::class, 'file'])->name('growya.chat.file');
 
     Route::patch('messages/{thread}/assign', [GrowyaChatEnhancementController::class, 'assign'])->name('growya.chat.assign');
@@ -274,7 +275,7 @@ Route::middleware('auth')->group(function () {
     Route::get('messages/{thread}/activity', [GrowyaChatEnhancementController::class, 'activity'])->name('growya.chat.activity');
     Route::get('admin/chat-reports', [GrowyaChatEnhancementController::class, 'reports'])->name('growya.chat.reports');
     Route::patch('admin/chat-reports/{report}', [GrowyaChatEnhancementController::class, 'review'])->name('growya.chat.reports.review');
-    Route::get('my-messages/unread-count', [GrowyaChatEnhancementController::class, 'unread'])->middleware('throttle:15,1')->name('growya.chat.unread');
+    Route::get('my-messages/unread-count', [GrowyaChatEnhancementController::class, 'unread'])->middleware('throttle:90,1')->name('growya.chat.unread');
 
     Route::get('businesses/{business}/claim', [GrowyaBusinessClaimController::class, 'create'])->name('growya.claims.create');
     Route::post('businesses/{business}/claim', [GrowyaBusinessClaimController::class, 'store'])->middleware('throttle:3,1')->name('growya.claims.store');
@@ -1062,7 +1063,7 @@ Route::get(
 |--------------------------------------------------------------------------
 */
 
-Route::middleware('throttle:5,1')->group(function () {
+Route::middleware('auth')->group(function () {
 
     Route::get(
         's/{business}/{service}/enquiry',
@@ -1072,7 +1073,7 @@ Route::middleware('throttle:5,1')->group(function () {
     Route::post(
         's/{business}/{service}/enquiry',
         [PublicServiceEnquiryController::class, 'store']
-    )->name('public.services.enquiries.store');
+    )->middleware('throttle:5,1')->name('public.services.enquiries.store');
 });
 
 Route::get(
@@ -1099,11 +1100,11 @@ Route::middleware('auth')->group(function () {
 require __DIR__.'/extensions_web.php';
 
 // Browser push uses session authentication + CSRF; API devices remain bearer-token based.
-Route::get('firebase-messaging-sw.js', [\App\Http\Controllers\GrowyaWebPushController::class, 'worker'])->name('growya.push.worker');
+Route::get('firebase-messaging-sw.js', [GrowyaWebPushController::class, 'worker'])->name('growya.push.worker');
 Route::middleware(['auth', 'throttle:20,1'])->group(function () {
-    Route::get('my-notifications/push/config', [\App\Http\Controllers\GrowyaWebPushController::class, 'config'])->name('growya.push.config');
-    Route::post('my-notifications/push/register', [\App\Http\Controllers\GrowyaWebPushController::class, 'store'])->name('growya.push.store');
-    Route::post('my-notifications/push/disable', [\App\Http\Controllers\GrowyaWebPushController::class, 'disable'])->name('growya.push.disable');
-    Route::post('my-notifications/push/test', [\App\Http\Controllers\GrowyaWebPushController::class, 'test'])->middleware('throttle:3,1')->name('growya.push.test');
+    Route::get('my-notifications/push/config', [GrowyaWebPushController::class, 'config'])->name('growya.push.config');
+    Route::post('my-notifications/push/register', [GrowyaWebPushController::class, 'store'])->name('growya.push.store');
+    Route::post('my-notifications/push/disable', [GrowyaWebPushController::class, 'disable'])->name('growya.push.disable');
+    Route::post('my-notifications/push/test', [GrowyaWebPushController::class, 'test'])->middleware('throttle:3,1')->name('growya.push.test');
     Route::get('my-notifications/{recipient}/visit', [GrowyaNotificationController::class, 'open'])->name('growya.notifications.visit');
 });

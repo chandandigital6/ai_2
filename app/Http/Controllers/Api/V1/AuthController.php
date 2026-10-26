@@ -16,7 +16,7 @@ class AuthController extends Controller
 {
     private function issue(User $user, string $device): array
     {
-        return ['token' => $user->createToken($device, ['growya'], now()->addDays(30))->plainTextToken, 'token_type' => 'Bearer', 'expires_in' => 2592000, 'user' => $user->only(['id', 'name', 'email', 'phone', 'user_type', 'status'])];
+        return ['token' => $user->createToken($device, ['growya'], now()->addDays(30))->plainTextToken, 'token_type' => 'Bearer', 'expires_in' => 2592000, 'user' => $user->only(['id', 'name', 'email', 'phone', 'user_type', 'account_type', 'status'])];
     }
 
     public function register(Request $request, CreateNewUser $creator)
@@ -46,7 +46,7 @@ class AuthController extends Controller
 
     public function me(Request $request)
     {
-        return response()->json(['data' => $request->user()->only(['id', 'name', 'email', 'phone', 'user_type', 'status'])]);
+        return response()->json(['data' => $request->user()->only(['id', 'name', 'email', 'phone', 'user_type', 'account_type', 'status'])]);
     }
 
     public function logout(Request $request)

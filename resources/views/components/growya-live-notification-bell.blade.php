@@ -55,7 +55,7 @@
             let soundEnabled = false;
             try { soundEnabled = localStorage.getItem(storeKey) === 'yes'; } catch (_) {}
             let lastSeen = null;
-            let running = false;
+            let running = false, nextPollAt = 0, failures = 0, stopped = false;
             let audioContext = null;
             const csrf = document.querySelector('meta[name="csrf-token"]')?.content
                 || document.querySelector('input[name="_token"]')?.value || '';
@@ -115,12 +115,21 @@
                 } catch (_) {}
             }
             async function poll() {
-                if (!root.isConnected || running || document.visibilityState === 'hidden') return;
-                running = true;
+                if (!root.isConnected || running || stopped || Date.now() < nextPollAt || document.visibilityState === 'hidden') return;
+                running = true; nextPollAt = Date.now() + 3000;
+                const controller = new AbortController(), timeout = setTimeout(() => controller.abort(), 15000);
                 try {
                     const res = await fetch(root.dataset.pollUrl, {
-                        credentials: 'same-origin', headers: { Accept: 'application/json' }, cache: 'no-store',
+                        credentials: 'same-origin', signal: controller.signal, headers: { Accept: 'application/json' }, cache: 'no-store',
                     });
+                    if (res.status === 429) {
+                        const retry = res.headers.get('Retry-After');
+                        const wait = /^\d+$/.test(retry || '') ? Number(retry) * 1000 : Math.max(0, Date.parse(retry) - Date.now()) || 60000;
+                        nextPollAt = Date.now() + Math.max(1000, wait);
+                        notice.textContent = 'Alerts will refresh in ' + Math.ceil(wait / 1000) + ' seconds.';
+                        return;
+                    }
+                    if ([401, 403, 419].includes(res.status)) stopped = true;
                     if (!res.ok) throw Error('Unable to load');
                     const data = await res.json();
                     const count = Number(data.count) || 0;
@@ -133,10 +142,11 @@
                         if (newOnes.length) { playSound(); desktopAlert(newOnes[0]); }
                     }
                     lastSeen = newest;
-                    notice.textContent = '';
+                    failures = 0; notice.textContent = '';
                 } catch (e) {
-                    notice.textContent = 'Connection unavailable; will retry automatically.';
-                } finally { running = false; }
+                    nextPollAt = Date.now() + Math.min(120000, 20000 * 2 ** Math.min(++failures, 3));
+                    notice.textContent = stopped ? 'Please reload and sign in again.' : 'Connection unavailable; will retry automatically.';
+                } finally { clearTimeout(timeout); running = false; }
             }
             toggle.addEventListener('click', function () {
                 menu.hidden = !menu.hidden;

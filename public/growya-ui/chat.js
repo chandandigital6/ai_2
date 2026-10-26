@@ -11,13 +11,21 @@
             if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') { event.preventDefault(); form?.requestSubmit(); }
         });
         if (root.dataset.live !== '1') return;
-        let last = Number(root.dataset.lastId) || 0, busy = false;
+        let last = Number(root.dataset.lastId) || 0, busy = false, nextPollAt = 0, failures = 0, stopped = false;
         async function poll() {
-            if (!root.isConnected || document.hidden || busy) return;
-            busy = true;
+            if (!root.isConnected || document.hidden || busy || stopped || Date.now() < nextPollAt) return;
+            busy = true; nextPollAt = Date.now() + 3000;
             const controller = new AbortController(), timeout = setTimeout(() => controller.abort(), 15000);
             try {
                 const response = await fetch(root.dataset.pollUrl + '?after=' + last, {credentials: 'same-origin', cache: 'no-store', signal: controller.signal, headers: {Accept: 'application/json'}});
+                if (response.status === 429) {
+                    const retry = response.headers.get('Retry-After');
+                    const wait = /^\d+$/.test(retry || '') ? Number(retry) * 1000 : Math.max(0, Date.parse(retry) - Date.now()) || 60000;
+                    nextPollAt = Date.now() + Math.max(1000, wait);
+                    status.textContent = 'Messages will refresh in ' + Math.ceil(wait / 1000) + ' seconds.';
+                    return;
+                }
+                if ([401, 403, 404, 419].includes(response.status)) stopped = true;
                 if (!response.ok) throw Error(response.status === 401 || response.status === 403 ? 'Session or chat access changed. Reload the page.' : 'Connection interrupted. Retrying automatically…');
                 const json = await response.json(), messages = json.messages || [];
                 if (!root.isConnected) return;
@@ -36,8 +44,9 @@
                     row.append(bubble); root.append(row);
                 }
                 if (nearBottom && messages.length) root.scrollTop = root.scrollHeight;
+                failures = 0;
                 status.textContent = 'Live messages connected';
-            } catch (error) { if (root.isConnected) status.textContent = error.message || 'Unable to refresh messages. Retrying automatically…'; }
+            } catch (error) { nextPollAt = Date.now() + Math.min(60000, 8000 * 2 ** Math.min(++failures, 3)); if (root.isConnected) status.textContent = error.message || 'Unable to refresh messages. Retrying automatically…'; }
             finally { clearTimeout(timeout); busy = false; }
         }
         const onVisible = () => { if (!document.hidden) poll(); };

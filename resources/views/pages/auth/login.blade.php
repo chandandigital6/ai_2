@@ -9,4 +9,6 @@
         <button type="submit" class="g-btn g-btn-primary w-full" data-test="login-button">Log in to Growya<x-growya.icon name="arrow-right" /></button>
     </form>
     @if(Route::has('register'))<p class="mt-7 text-center text-xs text-slate-600">New around here? <a href="{{ route('register') }}" class="font-semibold text-emerald-700">Create an account</a></p>@endif
+    <a href="{{ route('public.marketplace.index') }}" class="g-btn mt-5 w-full border border-slate-300 text-slate-700">Continue as guest</a>
+    <p class="mt-2 text-center text-xs text-slate-500">Browse businesses, services and products freely. Sign in to send an enquiry or buy.</p>
 </x-layouts::auth>
