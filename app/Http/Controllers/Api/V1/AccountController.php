@@ -3,11 +3,13 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Models\Business;
 use App\Models\City;
 use App\Models\Country;
 use App\Models\State;
 use App\Models\User;
 use App\Models\UserDevice;
+use App\Services\BusinessAccessService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
@@ -85,6 +87,14 @@ class AccountController extends Controller
         UserDevice::where('user_id', $request->user()->id)->update(['is_active' => false]);
 
         return response()->json(['message' => 'Password updated. All API tokens revoked; sign in again.']);
+    }
+
+    public function permissions(Request $request, Business $business)
+    {
+        $access = app(BusinessAccessService::class);
+        abort_unless($access->can($request->user(), $business, 'business.view'), 403);
+
+        return ['data' => collect(config('business_permissions.permissions'))->filter(fn ($permission) => $access->can($request->user(), $business, $permission))->values()];
     }
 
     public function locations(Request $request, string $kind)

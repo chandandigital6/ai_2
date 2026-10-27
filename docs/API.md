@@ -1,3 +1,5 @@
+> 26-Oct-2026 routing update: API routes now point to dedicated Api/V1 controllers. See docs/API_FUNCTIONS_GUIDE_HINDI.md and docs/API_ROUTE_CONTROLLER_MAP.md for current paths. Request/response contracts remain compatible.
+
 > Release 3 AI update: use [AI_STUDIO_API.md](AI_STUDIO_API.md) for current AI models, packages, credits, presets and responses. Older AI sections below are superseded.
 
 # API release 2

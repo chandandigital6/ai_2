@@ -16,7 +16,7 @@ Web/API budgets (per user; anonymous requests use original framework domain/IP s
 | Message send | 60 |
 | Product/service enquiry submit | 5 |
 
-API manifest ka existing outer 120/min budget bhi route-scoped hai. Har user ki total application traffic ek common 120 bucket mein ab count nahi hoti.
+Feature API routes ka existing outer 120/min budget bhi route-scoped hai. Har user ki total application traffic ek common 120 bucket mein ab count nahi hoti.
 
 Chat/notification browser polling overlap aur 3-second event bursts ko coalesce karti hai; Retry-After seconds/HTTP-date respect karti hai; connection errors par delay badhta hai. Hidden page par polling pause; expired session par chat/bell stop. Push config requests mein simultaneous GET deduplication aur per-URL cooldown hai. Updated script query versions browser cache refresh karte hain.
 
