@@ -211,53 +211,71 @@ class ProductVariantController extends Controller
             ->with('success', 'Variant updated successfully.');
     }
 
-    public function destroy(
-        Business $business,
-        Product $product,
-        ProductVariant $variant
-    ) {
-        $this->authorizeAccess(
-            $business,
-            $product,
-            'products.update'
-        );
+   public function destroy(
+    Business $business,
+    Product $product,
+    ProductVariant $variant
+) {
+    $this->authorizeAccess(
+        $business,
+        $product,
+        'products.update'
+    );
 
-        $this->checkVariant($product, $variant);
+    $this->checkVariant($product, $variant);
 
-        // Preserve historical references in orders/carts.
-        // abort_if(
-        //     $variant->order_items()->exists()
-        //     || $variant->cart_items()->exists(),
-        //     422,
-        //     'Variant is used in orders or carts and cannot be deleted.'
-        // );
+    $path = DB::transaction(function () use ($product, $variant) {
+        // Same lock order as variant updates.
+        Product::whereKey($product->id)
+            ->lockForUpdate()
+            ->firstOrFail();
+
+        $lockedVariant = ProductVariant::whereKey($variant->id)
+            ->where('product_id', $product->id)
+            ->lockForUpdate()
+            ->firstOrFail();
 
         if (
-            $variant->order_items()->exists()
-            || $variant->cart_items()->exists()
+            $lockedVariant->order_items()->exists()
+            || $lockedVariant->cart_items()->exists()
         ) {
-            return back()->withErrors([
-                'variant' => 'This variant is used in an order or cart and cannot be deleted.',
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'variant' => [
+                    'This variant is used in an order or cart. '
+                    .'Set it inactive instead of deleting it.',
+                ],
             ]);
         }
 
-        $path = $variant->image;
-
-        DB::transaction(function () use ($variant) {
-            $variant->delete();
-        });
-
-        if ($path) {
-            Storage::disk('public')->delete($path);
+        if ($lockedVariant->stockMovements()->exists()) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'variant' => [
+                    'This variant has stock movement history. '
+                    .'Set it inactive instead of deleting it.',
+                ],
+            ]);
         }
 
-        return redirect()
-            ->route('businesses.products.variants.index', [
-                $business,
-                $product,
-            ])
-            ->with('success', 'Variant deleted successfully.');
+        $imagePath = $lockedVariant->image;
+
+        // Attribute links are removed inside the same transaction.
+        $lockedVariant->attributeValues()->detach();
+        $lockedVariant->delete();
+
+        return $imagePath;
+    });
+
+    if ($path) {
+        Storage::disk('public')->delete($path);
     }
+
+    return redirect()
+        ->route('businesses.products.variants.index', [
+            $business,
+            $product,
+        ])
+        ->with('success', 'Variant deleted successfully.');
+}
 
     private function validated(
         Request $request,

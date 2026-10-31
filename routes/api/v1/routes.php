@@ -1,7 +1,5 @@
 <?php
 
-// Feature API routes. URLs are relative to /api/v1.
-// Every route points directly to its dedicated API controller method.
 
 use App\Http\Controllers\Api\V1\AdminBusinessReviewController;
 use App\Http\Controllers\Api\V1\AnalyticsController;
