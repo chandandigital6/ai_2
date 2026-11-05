@@ -109,10 +109,11 @@ class ServiceController extends Controller
         ]);
     }
 
-    private function validated(
-        Request $request,
-        ?Service $service = null
-    ): array {
+    // private function validated(
+    //     Request $request,
+    //     ?Service $service = null
+    // ): array {
+    private function validated(Request $request, Business $business): array{
         $data = $request->validate([
             'name' => [
                 'required',
@@ -234,7 +235,8 @@ class ServiceController extends Controller
     {
         $this->authorizeBusiness($business, 'services.create');
 
-        $data = $this->validated($request);
+        // $data = $this->validated($request);
+        $data = $this->validated($request, $business);
 
         unset($data['featured_image']);
 
@@ -327,7 +329,8 @@ class ServiceController extends Controller
             'services.update'
         );
 
-        $data = $this->validated($request, $service);
+        // $data = $this->validated($request, $service);
+        $data = $this->validated($request, $business);
 
         unset($data['featured_image']);
 
